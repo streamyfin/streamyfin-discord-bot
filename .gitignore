@@ -1,0 +1,32 @@
+# Node.js-Module
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Umgebungsvariablen
+.env
+
+# Betriebssystemspezifische Dateien
+.DS_Store
+Thumbs.db
+
+# Log-Dateien
+logs/
+*.log
+
+# IDE-spezifische Dateien
+.vscode/
+.idea/
+
+# Temporäre Dateien
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*.swn
+
+# Git-spezifische Dateien
+*.orig
+*.lock
