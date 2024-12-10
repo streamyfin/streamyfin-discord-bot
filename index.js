@@ -34,7 +34,8 @@ const commands = {
     testflight: {
         description: 'Explains how to join the Streamyfin testflight.',
         execute: (message) => {
-            message.reply('Currently the only way to join our Beta is to reach out to @Cagemaster via DM and send him your email address.');
+            const userId = '398161771476549654';
+            message.reply('Currently the only way to join our Beta is to reach out to <@${userId}} via DM and send him your email address.');
         },
     },
 };
@@ -44,7 +45,7 @@ client.once('ready', () => {
 });
 
 client.on('messageCreate', (message) => {
-    if (message.author.bot || !message.content.startsWith('!')) return;
+    if (message.author.bot || !message.content.startsWith('/')) return;
 
     const args = message.content.slice(1).trim().split(/ +/);
     const commandName = args.shift().toLowerCase();
