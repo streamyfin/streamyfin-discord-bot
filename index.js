@@ -35,7 +35,7 @@ const commands = {
         description: 'Explains how to join the Streamyfin testflight.',
         execute: (message) => {
             const userId = '398161771476549654';
-            message.reply('Currently the only way to join our Beta is to reach out to <@${userId}} via DM and send him your email address.');
+            message.reply('Currently the only way to join our Beta is to reach out to <@${userId}}> via DM and send him your email address.');
         },
     },
 };
