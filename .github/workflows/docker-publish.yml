@@ -14,18 +14,18 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    # Login to Docker Hub
+    # Log in to Docker Hub
     - name: Log in to Docker Hub
       run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-    # Build the Docker image
+    # Build the Docker image with dynamic name
     - name: Build Docker image
-      run: docker build -t ${{ secrets.DOCKER_USERNAME }}/discord-bot:latest .
+      run: |
+        IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ github.repository }}"
+        docker build -t $IMAGE_NAME:latest .
 
     # Push the Docker image to Docker Hub
-    - name: Push Docker image with version tag
+    - name: Push Docker image
       run: |
-        IMAGE_VERSION=$(date +'%Y%m%d%H%M%S') 
-        docker tag ${{ secrets.DOCKER_USERNAME }}/discord-bot:latest ${{ secrets.DOCKER_USERNAME }}/discord-bot:${IMAGE_VERSION}
-        docker push ${{ secrets.DOCKER_USERNAME }}/discord-bot:${IMAGE_VERSION}
- 
+        IMAGE_NAME="${{ secrets.DOCKER_USERNAME }}/${{ github.repository }}"
+        docker push $IMAGE_NAME:latest
