@@ -2,18 +2,18 @@ require("dotenv").config();
 const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
 const axios = require("axios");
 
-// GitHub API-Basis-URL und Repo-Daten
+// GitHub API base URL and repository data
 const GITHUB_API_BASE = "https://api.github.com";
 const REPO_OWNER = "fredrikburmester";
 const REPO_NAME = "streamyfin";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-// Discord Client initialisieren
+// Initialize the Discord Client
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
-// Slash Commands registrieren
+// Register slash commands
 const commands = [
   {
     name: "roadmap",
@@ -39,7 +39,7 @@ const commands = [
 
 const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
-// Commands auf Discord hochladen
+// Upload slash commands to Discord
 (async () => {
   try {
     console.log("Registering slash commands...");
@@ -52,7 +52,7 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
   }
 })();
 
-// Event: Bot bereit
+// Event: Bot is ready
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
@@ -107,10 +107,11 @@ client.on("interactionCreate", async (interaction) => {
     const answers = [];
 
     try {
+      // Create a private thread for issue creation
       const thread = await interaction.channel.threads.create({
         name: `Issue Creation: ${targetUser.username}`,
-        type: 11,
-        autoArchiveDuration: 60,
+        type: 11, // Private thread
+        autoArchiveDuration: 60, // Archive duration in minutes
         reason: "GitHub issue creation",
       });
 
@@ -119,6 +120,7 @@ client.on("interactionCreate", async (interaction) => {
         `${targetUser}, let's create a GitHub issue! I'll ask you a few questions.`
       );
 
+      // Ask the user questions one by one
       for (const question of questions) {
         await thread.send(question);
 
@@ -151,6 +153,7 @@ ${version}
 ${screenshots}
 `;
 
+      // Send the collected data to GitHub to create a new issue
       const issueResponse = await axios.post(
         `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
         {
@@ -169,6 +172,7 @@ ${screenshots}
       await thread.send(`✅ Issue created successfully: ${issueResponse.data.html_url}`);
       await thread.send("This thread will automatically close shortly.");
 
+      // Automatically archive the thread after 1 minute
       setTimeout(async () => {
         await thread.setArchived(true);
       }, 60000);
@@ -181,5 +185,5 @@ ${screenshots}
   }
 });
 
-// Bot starten
+// Start the bot
 client.login(process.env.DISCORD_TOKEN);
