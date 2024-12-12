@@ -105,6 +105,10 @@ const registerCommands = async () => {
         },
       ],
     },
+    {
+      name: "help",
+      description: "Get a list of available commands.",
+    },
   ];
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
@@ -134,6 +138,17 @@ client.on("interactionCreate", async (interaction) => {
     await interaction.reply(
       "📌 Here is our Roadmap: https://github.com/fredrikburmester/streamyfin/projects/5"
     );
+  }
+
+  if (commandName === "help") {
+    const commandList = commands
+      .map((cmd) => `**/${cmd.name}**: ${cmd.description}`)
+      .join("\n");
+
+    await interaction.reply({
+      content: `Available commands:\n${commandList}`,
+      ephemeral: true,
+    });
   }
 
   if (commandName === "issue") {
