@@ -2,45 +2,113 @@ require("dotenv").config();
 const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
 const axios = require("axios");
 
-// GitHub API base URL and repository data
+// GitHub API base URL and repo data
 const GITHUB_API_BASE = "https://api.github.com";
 const REPO_OWNER = "fredrikburmester";
 const REPO_NAME = "streamyfin";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-// Initialize the Discord Client
+// Function to fetch releases from GitHub
+const fetchReleases = async () => {
+  try {
+    const response = await axios.get(
+      `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/releases`,
+      {
+        headers: {
+          Authorization: `token ${GITHUB_TOKEN}`,
+        },
+      }
+    );
+
+    const releases = response.data
+      .slice(0, 2) // Get the latest 2 releases
+      .map((release) => ({ name: release.name, value: release.name }));
+
+    releases.push({ name: "Older", value: "Older" }); // Add "Older" as an option
+
+    return releases;
+  } catch (error) {
+    console.error("Error fetching releases from GitHub:", error);
+    return [
+      { name: "0.22.0", value: "0.22.0" }, // Fallback data
+      { name: "0.21.0", value: "0.21.0" },
+      { name: "Older", value: "Older" },
+    ];
+  }
+};
+
+// Initialize Discord client
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
-// Register slash commands
-const commands = [
-  {
-    name: "roadmap",
-    description: "Get the link to the GitHub roadmap.",
-  },
-  {
-    name: "issue",
-    description: "Get details about a specific issue from GitHub.",
-    options: [
-      {
-        name: "number",
-        type: 4, // Integer
-        description: "The issue number",
-        required: true,
-      },
-    ],
-  },
-  {
-    name: "createissue",
-    description: "Create a new issue on GitHub.",
-  },
-];
+const registerCommands = async () => {
+  const releaseChoices = await fetchReleases();
 
-const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+  const commands = [
+    {
+      name: "roadmap",
+      description: "Get the link to the GitHub roadmap.",
+    },
+    {
+      name: "issue",
+      description: "Get details about a specific issue from GitHub.",
+      options: [
+        {
+          name: "number",
+          type: 4, // Integer
+          description: "The issue number",
+          required: true,
+        },
+      ],
+    },
+    {
+      name: "createissue",
+      description: "Create a new issue on GitHub.",
+      options: [
+        {
+          name: "title",
+          type: 3, // String
+          description: "Short title describing the issue",
+          required: true,
+        },
+        {
+          name: "description",
+          type: 3, // String
+          description: "What happened? What did you expect to happen?",
+          required: true,
+        },
+        {
+          name: "steps",
+          type: 3, // String
+          description: "How can this issue be reproduced? (Step-by-step)",
+          required: true,
+        },
+        {
+          name: "device",
+          type: 3, // String
+          description: "Device and operating system (e.g., iPhone 15, iOS 18.1.1)",
+          required: true,
+        },
+        {
+          name: "version",
+          type: 3, // String
+          description: "Streamyfin version",
+          required: true,
+          choices: releaseChoices,
+        },
+        {
+          name: "screenshots",
+          type: 3, // String
+          description: "Links to screenshots (if applicable)",
+          required: false,
+        },
+      ],
+    },
+  ];
 
-// Upload slash commands to Discord
-(async () => {
+  const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+
   try {
     console.log("Registering slash commands...");
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
@@ -50,14 +118,13 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
   } catch (error) {
     console.error("Error registering slash commands:", error);
   }
-})();
+};
 
-// Event: Bot is ready
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-// Slash Command: /roadmap
+// Handle slash command interactions
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -69,7 +136,6 @@ client.on("interactionCreate", async (interaction) => {
     );
   }
 
-  // Slash Command: /issue
   if (commandName === "issue") {
     const issueNumber = options.getInteger("number");
 
@@ -92,56 +158,22 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-  // Slash Command: /createissue
   if (commandName === "createissue") {
-    const targetUser = interaction.user;
+    const title = options.getString("title");
+    const description = options.getString("description");
+    const steps = options.getString("steps");
+    const device = options.getString("device");
+    const version = options.getString("version");
+    const screenshots = options.getString("screenshots") || "No screenshots provided";
 
-    const questions = [
-      "What happened? Also tell us, what did you expect to happen?",
-      "How do you trigger this bug? Please provide the reproduction steps step by step.",
-      "Which device and operating system are you using? (e.g., iPhone 15, iOS 18.1.1)",
-      "What version of Streamyfin are you running? (Options: 0.22.0, 0.21.0, older)",
-      "If applicable, please add screenshots to help explain your problem (paste links or describe).",
-    ];
+    const username = interaction.user.username;
 
-    const answers = [];
-
-    try {
-      // Create a private thread for issue creation
-      const thread = await interaction.channel.threads.create({
-        name: `Issue Creation: ${targetUser.username}`,
-        type: 11, // Private thread
-        autoArchiveDuration: 60, // Archive duration in minutes
-        reason: "GitHub issue creation",
-      });
-
-      await thread.members.add(targetUser);
-      await thread.send(
-        `${targetUser}, let's create a GitHub issue! I'll ask you a few questions.`
-      );
-
-      // Ask the user questions one by one
-      for (const question of questions) {
-        await thread.send(question);
-
-        const collected = await thread.awaitMessages({
-          filter: (response) => response.author.id === targetUser.id,
-          max: 1,
-          time: 60000,
-        });
-
-        if (collected.size === 0) throw new Error("You didn't respond in time.");
-        answers.push(collected.first().content);
-      }
-
-      const [whatHappened, reproSteps, device, version, screenshots] = answers;
-
-      const body = `
+    const body = `
 ### What happened?
-${whatHappened}
+${description}
 
 ### Reproduction steps
-${reproSteps}
+${steps}
 
 ### Device and operating system
 ${device}
@@ -153,11 +185,11 @@ ${version}
 ${screenshots}
 `;
 
-      // Send the collected data to GitHub to create a new issue
+    try {
       const issueResponse = await axios.post(
         `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
         {
-          title: `[Bug]: ${whatHappened.slice(0, 50)}`,
+          title: `[Bug][${username}]: ${title}`,
           body: body,
           labels: ["❌ bug"],
           assignees: ["fredrikburmester"],
@@ -169,21 +201,15 @@ ${screenshots}
         }
       );
 
-      await thread.send(`✅ Issue created successfully: ${issueResponse.data.html_url}`);
-      await thread.send("This thread will automatically close shortly.");
-
-      // Automatically archive the thread after 1 minute
-      setTimeout(async () => {
-        await thread.setArchived(true);
-      }, 60000);
-    } catch (error) {
-      console.error(error);
       await interaction.reply(
-        `${interaction.user}, I couldn't complete the issue creation process. Please try again.`
+        `✅ Issue created successfully: ${issueResponse.data.html_url}`
       );
+    } catch (error) {
+      console.error("Error creating issue:", error);
+      await interaction.reply("❌ Failed to create the issue. Please try again.");
     }
   }
 });
 
-// Start the bot
+registerCommands();
 client.login(process.env.DISCORD_TOKEN);
