@@ -8,7 +8,9 @@ const REPO_OWNER = "fredrikburmester";
 const REPO_NAME = "streamyfin";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-// Function to fetch releases from GitHub
+let commands = []; // Globale Variable für die Commands
+
+// Funktion zum Abrufen von Releases von GitHub
 const fetchReleases = async () => {
   try {
     const response = await axios.get(
@@ -21,31 +23,32 @@ const fetchReleases = async () => {
     );
 
     const releases = response.data
-      .slice(0, 2) // Get the latest 2 releases
+      .slice(0, 2) // Hol die letzten 2 Releases
       .map((release) => ({ name: release.name, value: release.name }));
 
-    releases.push({ name: "Older", value: "Older" }); // Add "Older" as an option
+    releases.push({ name: "Older", value: "Older" }); // Füge "Older" als Option hinzu
 
     return releases;
   } catch (error) {
-    console.error("Error fetching releases from GitHub:", error);
+    console.error("Fehler beim Abrufen von Releases:", error);
     return [
-      { name: "0.22.0", value: "0.22.0" }, // Fallback data
+      { name: "0.22.0", value: "0.22.0" }, // Fallback-Daten
       { name: "0.21.0", value: "0.21.0" },
       { name: "Older", value: "Older" },
     ];
   }
 };
 
-// Initialize Discord client
+// Discord-Client initialisieren
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
+// Slash-Commands registrieren
 const registerCommands = async () => {
   const releaseChoices = await fetchReleases();
 
-  const commands = [
+  commands = [ // Globale Variable hier befüllen
     {
       name: "roadmap",
       description: "Get the link to the GitHub roadmap.",
@@ -118,17 +121,18 @@ const registerCommands = async () => {
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
       body: commands,
     });
-    console.log("Slash commands registered successfully!");
+    console.log("Slash commands registered erfolgreich!");
   } catch (error) {
-    console.error("Error registering slash commands:", error);
+    console.error("Fehler beim Registrieren der Slash-Commands:", error);
   }
 };
 
+// Event, wenn der Bot bereit ist
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-// Handle slash command interactions
+// Slash-Command-Interaktionen verarbeiten
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -226,5 +230,6 @@ ${screenshots}
   }
 });
 
+// Commands registrieren und Bot starten
 registerCommands();
 client.login(process.env.DISCORD_TOKEN);
