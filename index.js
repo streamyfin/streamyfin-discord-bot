@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits, REST, Routes } = require("discord.js");
+const { Client, GatewayIntentBits, REST, Routes, ChannelType, MessageCollector } = require("discord.js");
 const axios = require("axios");
 
 // GitHub API base URL and repo data
@@ -8,9 +8,9 @@ const REPO_OWNER = "fredrikburmester";
 const REPO_NAME = "streamyfin";
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-let commands = []; // Globale Variable für die Commands
+let commands = []; // Global commands array
 
-// Funktion zum Abrufen von Releases von GitHub
+// Function to fetch releases from GitHub
 const fetchReleases = async () => {
   try {
     const response = await axios.get(
@@ -23,32 +23,32 @@ const fetchReleases = async () => {
     );
 
     const releases = response.data
-      .slice(0, 2) // Hol die letzten 2 Releases
+      .slice(0, 2) // Fetch the latest 2 releases
       .map((release) => ({ name: release.name, value: release.name }));
 
-    releases.push({ name: "Older", value: "Older" }); // Füge "Older" als Option hinzu
+    releases.push({ name: "Older", value: "Older" }); // Add "Older" as an option
 
     return releases;
   } catch (error) {
-    console.error("Fehler beim Abrufen von Releases:", error);
+    console.error("Error fetching releases:", error);
     return [
-      { name: "0.22.0", value: "0.22.0" }, // Fallback-Daten
+      { name: "0.22.0", value: "0.22.0" }, // Fallback data
       { name: "0.21.0", value: "0.21.0" },
       { name: "Older", value: "Older" },
     ];
   }
 };
 
-// Discord-Client initialisieren
+// Initialize Discord client
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
 });
 
-// Slash-Commands registrieren
+// Register slash commands
 const registerCommands = async () => {
   const releaseChoices = await fetchReleases();
 
-  commands = [ // Globale Variable hier befüllen
+  commands = [
     {
       name: "roadmap",
       description: "Get the link to the GitHub roadmap.",
@@ -68,45 +68,6 @@ const registerCommands = async () => {
     {
       name: "createissue",
       description: "Create a new issue on GitHub.",
-      options: [
-        {
-          name: "title",
-          type: 3, // String
-          description: "Short title describing the issue",
-          required: true,
-        },
-        {
-          name: "description",
-          type: 3, // String
-          description: "What happened? What did you expect to happen?",
-          required: true,
-        },
-        {
-          name: "steps",
-          type: 3, // String
-          description: "How can this issue be reproduced? (Step-by-step)",
-          required: true,
-        },
-        {
-          name: "device",
-          type: 3, // String
-          description: "Device and operating system (e.g., iPhone 15, iOS 18.1.1)",
-          required: true,
-        },
-        {
-          name: "version",
-          type: 3, // String
-          description: "Streamyfin version",
-          required: true,
-          choices: releaseChoices,
-        },
-        {
-          name: "screenshots",
-          type: 3, // String
-          description: "Links to screenshots (if applicable)",
-          required: false,
-        },
-      ],
     },
     {
       name: "help",
@@ -121,18 +82,18 @@ const registerCommands = async () => {
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
       body: commands,
     });
-    console.log("Slash commands registered erfolgreich!");
+    console.log("Slash commands registered successfully!");
   } catch (error) {
-    console.error("Fehler beim Registrieren der Slash-Commands:", error);
+    console.error("Error registering slash commands:", error);
   }
 };
 
-// Event, wenn der Bot bereit ist
+// Event when the bot is ready
 client.once("ready", () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
-// Slash-Command-Interaktionen verarbeiten
+// Handle slash command interactions
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -178,58 +139,103 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (commandName === "createissue") {
-    const title = options.getString("title");
-    const description = options.getString("description");
-    const steps = options.getString("steps");
-    const device = options.getString("device");
-    const version = options.getString("version");
-    const screenshots = options.getString("screenshots") || "No screenshots provided";
+    // Start by creating a private thread
+    const thread = await interaction.channel.threads.create({
+      name: `Issue Report by ${interaction.user.username}`,
+      autoArchiveDuration: 60, // Auto-archive after 1 hour
+      type: ChannelType.PrivateThread,
+      reason: "Collecting issue details",
+    });
 
-    const username = interaction.user.username;
+    await thread.members.add(interaction.user.id); // Add the user to the thread
+    await interaction.reply({ content: `✅ Private thread created: ${thread.name}`, ephemeral: true });
 
-    const body = `
+    // Define the questions to ask the user
+    const questions = [
+      { key: "title", question: "What is the title of the issue?" },
+      { key: "description", question: "What happened? What did you expect to happen?" },
+      { key: "steps", question: "How can this issue be reproduced? (step-by-step)" },
+      { key: "device", question: "What device and operating system are you using?" },
+      { key: "version", question: "What is the affected Streamyfin version?" },
+      { key: "screenshots", question: "Provide links to screenshots (if any), or type 'none'." },
+    ];
+
+    const collectedData = {}; // Store user responses here
+
+    // Helper function to ask questions
+    const askQuestion = async (questionIndex = 0) => {
+      if (questionIndex >= questions.length) {
+        // All questions answered, proceed to create the issue
+        const body = `
 ### What happened?
-${description}
+${collectedData.description}
 
 ### Reproduction steps
-${steps}
+${collectedData.steps}
 
 ### Device and operating system
-${device}
+${collectedData.device}
 
 ### Version
-${version}
+${collectedData.version}
 
 ### Screenshots
-${screenshots}
+${collectedData.screenshots || "No screenshots provided"}
 `;
 
-    try {
-      const issueResponse = await axios.post(
-        `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
-        {
-          title: `[Bug][${username}]: ${title}`,
-          body: body,
-          labels: ["❌ bug"],
-          assignees: ["fredrikburmester"],
-        },
-        {
-          headers: {
-            Authorization: `token ${GITHUB_TOKEN}`,
-          },
-        }
-      );
+        try {
+          const issueResponse = await axios.post(
+            `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
+            {
+              title: `[Bug][${interaction.user.username}]: ${collectedData.title}`,
+              body: body,
+              labels: ["❌ bug"],
+              assignees: ["fredrikburmester"],
+            },
+            {
+              headers: {
+                Authorization: `token ${GITHUB_TOKEN}`,
+              },
+            }
+          );
 
-      await interaction.reply(
-        `✅ Issue created successfully: ${issueResponse.data.html_url}`
-      );
-    } catch (error) {
-      console.error("Error creating issue:", error);
-      await interaction.reply("❌ Failed to create the issue. Please try again.");
-    }
+          await thread.send(`✅ Issue created successfully: ${issueResponse.data.html_url}`);
+          await thread.setLocked(true, "Issue details collected and sent to GitHub.");
+        } catch (error) {
+          console.error("Error creating issue:", error);
+          await thread.send("❌ Failed to create the issue. Please try again.");
+        }
+        return;
+      }
+
+      // Ask the next question
+      const question = questions[questionIndex];
+      await thread.send(question.question);
+
+      // Set up a message collector to get the user's response
+      const collector = new MessageCollector(thread, {
+        filter: (msg) => msg.author.id === interaction.user.id,
+        max: 1, // Collect only one message
+        time: 300000, // Timeout after 5 minutes
+      });
+
+      collector.on("collect", (msg) => {
+        collectedData[question.key] = msg.content;
+        askQuestion(questionIndex + 1); // Ask the next question
+      });
+
+      collector.on("end", (collected, reason) => {
+        if (reason === "time") {
+          thread.send("❌ You did not respond in time. Please run the command again if you'd like to create an issue.");
+        }
+      });
+    };
+
+    // Start asking questions
+    askQuestion();
   }
 });
 
-// Commands registrieren und Bot starten
+// Register commands and start the bot
 registerCommands();
 client.login(process.env.DISCORD_TOKEN);
