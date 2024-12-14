@@ -4,8 +4,8 @@ const axios = require("axios");
 
 // GitHub API base URL and repo data
 const GITHUB_API_BASE = "https://api.github.com";
-const REPO_OWNER = "fredrikburmester";
-const REPO_NAME = "streamyfin";
+const REPO_OWNER = process.env.REPO_OWNER;
+const REPO_NAME = process.env.REPO_NAME;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 let commands = []; // Global commands array
@@ -41,7 +41,7 @@ const fetchReleases = async () => {
 
 // Initialize Discord client
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
 // Register slash commands
@@ -73,6 +73,14 @@ const registerCommands = async () => {
       name: "help",
       description: "Get a list of available commands.",
     },
+    {
+      name: "testflight",
+      description: "Explains how to join the Streamyfin Testflight.",
+    },
+    {
+      name: "repo",
+      description: "Get the link to the GitHub repository."
+    },
   ];
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
@@ -98,6 +106,12 @@ client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
   const { commandName, options } = interaction;
+
+  if (commandName === "repo") {
+    await interaction.reply(
+      "📡 Here is our GitHub repository: https://github.com/fredrikburmester/streamyfin"
+    );
+  }
 
   if (commandName === "roadmap") {
     await interaction.reply(
@@ -136,6 +150,13 @@ client.on("interactionCreate", async (interaction) => {
     } catch (error) {
       await interaction.reply("❌ Issue not found or an error occurred.");
     }
+  }
+
+  if (commandName === "testflight") {
+    const userId = '398161771476549654';
+    await interaction.reply(
+      `Currently, Streamyfin Testflight is full. However, you can send a private message to <@${userId}> with your email address and he will add you to the Testflight beta group manually.`
+    );
   }
 
   if (commandName === "createissue") {
