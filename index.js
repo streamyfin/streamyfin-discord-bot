@@ -183,26 +183,30 @@ client.on("interactionCreate", async (interaction) => {
     });
 
   await interaction.reply({ 
-    content: `✅ Forum thread created: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${forumChannelId}/${thread.id})`,
+    content: `✅ Forum thread created, please fill out the issue report: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${forumChannelId}/${thread.id})`,
     ephemeral: true,
   });
 
     // Define the questions to ask the user
     const questions = [
-      { key: "title", question: "What is the title of the issue?" },
+      { key: "title", question: "Describe your issue in a few words." },
       { key: "description", question: "What happened? What did you expect to happen?" },
       { key: "steps", question: "How can this issue be reproduced? (step-by-step)" },
       { key: "device", question: "What device and operating system are you using?" },
       { key: "version", question: "What is the affected Streamyfin version?" },
-      { key: "screenshots", question: "Provide links to screenshots (if any), or type 'none'." },
+      { key: "screenshots", question: "Please provide any screenshots that might help us reproduce the issue (optional), or type 'none'.", allowUploads: true },
     ];
 
     const collectedData = {}; // Store user responses here
-
+    const uploadedFiles = []; // Store uploaded files here
     // Helper function to ask questions
     const askQuestion = async (questionIndex = 0) => {
       if (questionIndex >= questions.length) {
-        // All questions answered, proceed to create the issue
+        // All questions have been asked
+        const screenshotsText = uploadedFiles.length
+         ? uploadedFiles.map((file) => file.url).join("\n")
+         : "No screenshots provided";
+
         const body = `
 ### What happened?
 ${collectedData.description}
@@ -217,14 +221,14 @@ ${collectedData.device}
 ${collectedData.version}
 
 ### Screenshots
-${collectedData.screenshots || "No screenshots provided"}
+${screenshotsText}
 `;
 
         try {
           const issueResponse = await axios.post(
             `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
             {
-              title: `[Bug][${interaction.user.username}]: ${collectedData.title}`,
+              title: `[Bug]: ${collectedData.title} reported via Discord by [${interaction.user.username}]`,
               body: body,
               labels: ["❌ bug"],
               assignees: ["fredrikburmester"],
@@ -256,9 +260,19 @@ ${collectedData.screenshots || "No screenshots provided"}
         time: 300000, // Timeout after 5 minutes
       });
 
-      collector.on("collect", (msg) => {
-        collectedData[question.key] = msg.content;
-        askQuestion(questionIndex + 1); // Ask the next question
+      collector.on("collect", async (msg) => {
+        if (question.allowUploads && msg.attachments.size > 0) {
+          msg.attachments.forEach((attachment) => {
+            uploadedFiles.push({
+              name: attachment.filename,
+              url: attachment.url,
+            });
+          });
+          collectedData[question.key] = "Screenshots uploaded";
+        } else {
+          collectedData[question.key] = msg.content;
+        }
+        askQuestion(questionIndex + 1);
       });
 
       collector.on("end", (collected, reason) => {
