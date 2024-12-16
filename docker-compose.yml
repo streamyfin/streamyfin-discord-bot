@@ -13,5 +13,6 @@ services:
       - GITHUB_TOKEN=${GITHUB_TOKEN}   # GitHub token for API requests
       - REPO_OWNER=${REPO_OWNER}       # GitHub repository owner
       - REPO_NAME=${REPO_NAME}         # GitHub repository name
+      - FORUM_CHANNEL_ID=${FORUM_CHANNEL_ID}      
     command: sh -c "npm install && node index.js" # Install dependencies and run the bot
     restart: unless-stopped # Restart the container if it crashes
