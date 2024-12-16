@@ -160,16 +160,32 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (commandName === "createissue") {
-    // Start by creating a private thread
-    const thread = await interaction.channel.threads.create({
+    // Start by creating a private thread in forum
+    const forumChannelId= process.env.FORUM_CHANNEL_ID;
+    const forumChannel = interaction.guild.channels.cache.get(forumChannelId);
+
+    if (!forumChannel || forumChannel.type !== ChannelType.GuildForum) {
+      await interaction.reply({
+        content: "❌ Forum channel not found or is not a forum channel.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    const thread = await forumChannel.threads.create({
       name: `Issue Report by ${interaction.user.username}`,
+      message: {
+        content: `Hello ${interaction.user.username}, let's collect the details for your issue report!`,
+      },
       autoArchiveDuration: 60, // Auto-archive after 1 hour
       type: ChannelType.PrivateThread,
       reason: "Collecting issue details",
     });
 
-    await thread.members.add(interaction.user.id); // Add the user to the thread
-    await interaction.reply({ content: `✅ Private thread created: ${thread.name}`, ephemeral: true });
+  await interaction.reply({ 
+    content: `✅ Forum thread created: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${forumChannelId}/${thread.id})`,
+    ephemeral: true,
+  });
 
     // Define the questions to ask the user
     const questions = [
