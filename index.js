@@ -115,7 +115,7 @@ client.on("interactionCreate", async (interaction) => {
 
   if (commandName === "roadmap") {
     await interaction.reply(
-      "📌 Here is our Roadmap: https://github.com/fredrikburmester/streamyfin/projects/5/"
+      "📌 Here is our Roadmap: https://github.com/users/fredrikburmester/projects/5/views/8"
     );
   }
 
