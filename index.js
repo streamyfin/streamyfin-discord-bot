@@ -126,7 +126,7 @@ client.on("interactionCreate", async (interaction) => {
 
     await interaction.reply({
       content: `Available commands:\n${commandList}`,
-      ephemeral: true,
+      ephemeral: false,
     });
   }
 
