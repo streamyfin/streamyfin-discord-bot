@@ -297,6 +297,15 @@ ${screenshotsText}
           collectedData[question.key] = "Screenshots uploaded";
         } else {
           collectedData[question.key] = msg.content;
+
+          if (question.key ==="title") {
+            try {
+              await thread.setName(`Issue ${collectedData.title} reported by ${interaction.user.username}`);
+            } catch (error) {
+              console.error("Error setting thread name:", error);
+              await thread.send("❌ Failed to set the thread name. Please try again.");
+            }
+          }
         }
         askQuestion(questionIndex + 1);
       });
