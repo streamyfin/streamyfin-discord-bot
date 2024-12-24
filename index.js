@@ -210,7 +210,7 @@ client.on("interactionCreate", async (interaction) => {
 
   await interaction.reply({ 
     content: `✅ Forum thread created, please fill out the issue report: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${forumChannelId}/${thread.id})`,
-    ephemeral: true,
+    ephemeral: false,
   });
 
     // Define the questions to ask the user
