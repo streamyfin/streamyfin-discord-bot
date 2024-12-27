@@ -107,6 +107,14 @@ const registerCommands = async () => {
         },
       ],
     },
+    {
+      name: "featurerequest",
+      description: "Request a new feature for Streamyfin.",
+    },
+    {
+      name:"donate", 
+      description: "Shows how to support the Streamyfin project."
+    }
   ];
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
@@ -372,6 +380,30 @@ ${screenshotsText}
       console.error("Error closing issue:", error);
       await interaction.reply({ content: "❌ Failed to close the issue. Please try again.", ephemeral: true });
     }
+  }
+  
+
+
+  if (commandName === "donate") {
+    await interaction.reply({
+      content: `🎁 Thank you for supporting our work by sharing your experiences. While we do have many contributors, the main work is made by <@${userId}>! Best way to support his effords is by spend him a coffee: https://buymeacoffee.com/fredrikbur3`,
+    });
+  } 
+  
+  if (commandName ==="featurerequest") {
+    const targetChannel = client.channels.cache.get('1273278866105831424');
+    if (!targetChannel) {
+      await interaction.reply({ content:'❌ Target channel not found.', ephemeral: true});
+      return;
+    }
+
+    const thread = await targetChannel.threads.create({
+      name: `Feature Request by ${interaction.user.username}`,
+      reason: 'User requested a feature',
+    });
+
+    await thread.send(' ${interaction.user.username} has a feature request. Please share your idea and any additional information here.');
+    await interaction.reply({content: '✅ Your feature request thread has been created in the #features channel!', ephemeral: true });
   }
 });
 
