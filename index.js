@@ -8,6 +8,8 @@ const REPO_OWNER = process.env.REPO_OWNER;
 const REPO_NAME = process.env.REPO_NAME;
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
+const userId = '398161771476549654';
+
 let commands = []; // Global commands array
 
 // Function to fetch releases from GitHub
@@ -187,7 +189,6 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (commandName === "testflight") {
-    const userId = '398161771476549654';
     await interaction.reply(
       `Currently, Streamyfin Testflight is full. However, you can send a private message to <@${userId}> with your email address and he will add you to the Testflight beta group manually.`
     );
