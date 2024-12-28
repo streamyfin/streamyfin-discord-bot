@@ -408,7 +408,7 @@ ${screenshotsText}
     }
 
     const thread = await targetChannel.threads.create({
-      name: `Feature: ${description} requested by ${interaction.user.username},`,
+      name: `Feature: ${description} requested by ${interaction.user.username}`,
       reason: 'User requested a feature',
     });
 
