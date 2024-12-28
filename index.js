@@ -112,6 +112,14 @@ const registerCommands = async () => {
     {
       name: "featurerequest",
       description: "Request a new feature for Streamyfin.",
+      options: [
+        {
+          name: "description",
+          type: 3, // String
+          description: "A short description of the feature request.",
+          required: true,
+        },
+      ],
     },
     {
       name:"donate", 
@@ -387,11 +395,12 @@ ${screenshotsText}
 
   if (commandName === "donate") {
     await interaction.reply({
-      content: `🎁 Thank you for supporting our work by sharing your experiences. While we do have many contributors, the main work is made by <@${userId}>! Best way to support his effords is by spend him a coffee: https://buymeacoffee.com/fredrikbur3`,
+      content: `🎁 Thank you for supporting our work and sharing your experiences! While many contributors are involved, the majority of the work is done by <@${userId}>. The best way to show your support is by buying him a coffee: https://buymeacoffee.com/fredrikbur3`,
     });
-  } 
+  }
   
   if (commandName ==="featurerequest") {
+    const description = options.getString("description");
     const targetChannel = client.channels.cache.get('1273278866105831424');
     if (!targetChannel) {
       await interaction.reply({ content:'❌ Target channel not found.', ephemeral: true});
@@ -399,12 +408,12 @@ ${screenshotsText}
     }
 
     const thread = await targetChannel.threads.create({
-      name: `Feature Request by ${interaction.user.username}`,
+      name: `Feature: ${description} requested by ${interaction.user.username},`,
       reason: 'User requested a feature',
     });
 
-    await thread.send(' ${interaction.user.username} has a feature request. Please share your idea and any additional information here.');
-    await interaction.reply({content: '✅ Your feature request thread has been created in the #features channel!', ephemeral: true });
+    await thread.send({content: `🎉 Thank you for your feature request! Feel free to discuss this feature here!`});
+    await interaction.reply({content: `✅ Your feature request has been submitted and a discussion thread has been created: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${targetChannel.id}/${thread.id})`, ephemeral: true});
   }
 });
 
