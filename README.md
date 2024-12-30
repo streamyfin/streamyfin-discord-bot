@@ -1,4 +1,4 @@
-# Streamyfin Discord Bot
+# [Streamyfin](https://github.com/streamyfin/streamyfin)-Discord Bot
 
 A Discord bot to interact with the Streamyfin GitHub repository and streamline issue management, feature requests, and other project-related tasks.
 
