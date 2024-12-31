@@ -72,6 +72,9 @@ module.exports = {
                 color: 0x6A0DAD,
                 title: "📈 Contribution Overview",
                 description: mapped,
+                thumbnail: {
+                    url: repoResponse.data.organization.avatar_url
+                },
                 fields: [
                     {
                         name: "⭐ Star Count",
