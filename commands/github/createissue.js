@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, MessageCollector } = require('discord.js');
+const axios = require ("axios");
 
 module.exports = {
 	data: new SlashCommandBuilder()
