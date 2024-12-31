@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, StringSelectMenuBuilder } = require('discord.js');
+const axios = require ("axios");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -6,7 +7,7 @@ module.exports = {
         .setDescription('Shows how to support the Streamyfin project.'),
     async run(interaction) {
 
-        const leaderboard = await fetchStats();
+        const leaderboard = await interaction.client.fetchStats();
         if (!leaderboard || leaderboard.length === 0) {
             await interaction.reply({ content: "❌ No data available", ephemeral: true });
             return;
@@ -15,27 +16,45 @@ module.exports = {
 
         const repoResponse = await axios.get("https://api.github.com/repos/streamyfin/streamyfin");
         const starCount = repoResponse.data.stargazers_count;
-
-        let embed = {
+        let embed =  {
+            title: "Streamyfin's info",
             color: 0x6A0DAD,
-            title: "📈 Contribution Overview",
-            description: mapped,
+            description: repoResponse.data.description,
+            thumbnail: {
+                url: repoResponse.data.organization.avatar_url
+            },
             fields: [
                 {
-                    name: "⭐ Star Count",
-                    value: `The repository has **${starCount}** stars.`,
+                    name: "Forks",
+                    value: repoResponse.data.forks_count.toLocaleString(),
+                    inline: true
+                },
+                {
+                    name: "Watchers",
+                    value: repoResponse.data.watchers.toLocaleString(),
+                    inline: true,
+                },
+                {
+                    name: "Stars",
+                    value: starCount,
+                    inline: true,
+                },
+                {
+                    name: "Language",
+                    value: repoResponse.data.language,
+                    inline: true,
+                },
+                {
+                    name: "License",
+                    value: repoResponse.data.license.name,
                     inline: true,
                 }
-            ],
-            timestamp: new Date(),
-            footer: {
-                text: `Star Count: ${starCount}`,
-            },
-        };
+            ]
+        }
         let options = [
             {
-                label: "Information",
-                value: "Information",
+                label: "📈 Contribution Overview",
+                value: "Contribution",
                 description: "Get information about the repo!"
             }
         ]
@@ -50,40 +69,21 @@ module.exports = {
         let collector = msg.createMessageComponentCollector({ filter, max: 1, errors: ["time"], time: 120000 });
         collector.on("collect", (interaction) => {
             embed = {
-                title: "Streamyfin's info",
                 color: 0x6A0DAD,
-                description: repoResponse.data.description,
-                thumbnail: {
-                    url: repoResponse.data.organization.avatar_url
-                },
+                title: "📈 Contribution Overview",
+                description: mapped,
                 fields: [
                     {
-                        name: "Forks",
-                        value: repoResponse.data.forks_count.toLocaleString(),
-                        inline: true
-                    },
-                    {
-                        name: "Watchers",
-                        value: repoResponse.data.watchers.toLocaleString(),
-                        inline: true,
-                    },
-                    {
-                        name: "Stars",
-                        value: starCount,
-                        inline: true,
-                    },
-                    {
-                        name: "Language",
-                        value: repoResponse.data.language,
-                        inline: true,
-                    },
-                    {
-                        name: "License",
-                        value: repoResponse.data.license.name,
+                        name: "⭐ Star Count",
+                        value: `The repository has **${starCount}** stars.`,
                         inline: true,
                     }
-                ]
-            }
+                ],
+                timestamp: new Date(),
+                footer: {
+                    text: `Star Count: ${starCount}`,
+                },
+            };
             interaction.update({ embeds: [embed] });
         })
     },

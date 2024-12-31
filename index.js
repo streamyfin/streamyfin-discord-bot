@@ -1,7 +1,6 @@
 require("dotenv").config();
 const Streamyfin = require('./client');
-const { Client, GatewayIntentBits, REST, Routes, ChannelType, MessageCollector, StringSelectMenuBuilder } = require ("discord.js");
-const axios = require ("axios");
+const { GatewayIntentBits, REST, Routes } = require ("discord.js");
 const fs = require("fs");
 
 // GitHub API base URL and repo data

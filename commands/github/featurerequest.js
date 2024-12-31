@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Request a new feature for Streamyfin.'),
     async run(interaction) {
         const description = options.getString("description");
-        const targetChannel = client.channels.cache.get('1273278866105831424');
+        const targetChannel = interaction.client.channels.cache.get('1273278866105831424');
         if (!targetChannel) {
             await interaction.reply({ content: '❌ Target channel not found.', ephemeral: true });
             return;
