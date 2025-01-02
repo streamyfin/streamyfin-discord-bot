@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const axios = require ("axios");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -28,8 +29,8 @@ module.exports = {
     const REPO_NAME = process.env.REPO_NAME;
     const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const allowedRoles = ["Developer", "Administrator"];
-    const state = options.getString("state");
-    const stateReason = options.getString("state_reason");
+    const state = interaction.options.getString("state");
+    const stateReason = interaction.options.getString("state_reason");
     const thread = interaction.channel;
 
     // Check if the user has the required role
