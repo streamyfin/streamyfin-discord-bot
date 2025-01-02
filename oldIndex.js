@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { Client, GatewayIntentBits, REST, Routes, ChannelType, MessageCollector } = require ("discord.js");
+const { Client, GatewayIntentBits, REST, Routes, ChannelType, MessageCollector, StringSelectMenuBuilder } = require ("discord.js");
 const axios = require ("axios");
 
 // GitHub API base URL and repo data
@@ -41,6 +41,18 @@ const fetchReleases = async () => {
   }
 };
 
+const fetchStats = async () => {
+  const url = `https://api.github.com/repos/streamyfin/streamyfin/contributors?anon=1`;
+
+  const response = await axios.get(url);
+  const contributors = await response.data;
+
+  return contributors.map((contributor) => ({
+      username: contributor.login || contributor.name,
+      contributions: contributor.contributions,
+  }));
+};
+
 // Initialize Discord client
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -48,7 +60,7 @@ const client = new Client({
 
 // Register slash commands
 const registerCommands = async () => {
-  await fetchReleases();
+  if (GITHUB_TOKEN) await fetchReleases();
 
   commands = [
     {
@@ -126,9 +138,9 @@ const registerCommands = async () => {
       description: "Shows how to support the Streamyfin project."
     },
     {
-      name:"stats", 
-      description: "Shows how to support the Streamyfin project."
-    },
+      name: "stats",
+      description: "Streamyfin's stats"
+    }
   ];
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
@@ -419,8 +431,89 @@ ${screenshotsText}
     await thread.send({content: `🎉 Thank you for your feature request! Feel free to discuss this feature here!`});
     await interaction.reply({content: `✅ Your feature request has been submitted and a discussion thread has been created: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${targetChannel.id}/${thread.id})`, ephemeral: true});
   }
-});
+  if (commandName === "stats") {
 
+    const leaderboard = await fetchStats(); 
+    if (!leaderboard || leaderboard.length === 0) {
+        await interaction.reply({ content: "❌ No data available", ephemeral: true });
+        return;
+    }
+    const mapped = leaderboard.map((x, index) => `${index + 1}. ${x.username} - ${x.contributions}`) .join("\n");
+
+    const repoResponse = await axios.get("https://api.github.com/repos/streamyfin/streamyfin");
+    const starCount = repoResponse.data.stargazers_count;
+
+    let embed = {
+        color: 0x6A0DAD, 
+        title: "📈 Contribution Overview",
+        description: mapped,
+        fields: [
+            {
+                name: "⭐ Star Count",
+                value: `The repository has **${starCount}** stars.`,
+                inline: true,
+            }
+        ],
+        timestamp: new Date(),
+        footer: {
+            text: `Star Count: ${starCount}`,
+        },
+    };
+    let options = [
+      {
+        label: "Information",
+        value: "Information",
+        description: "Get information about the repo!"
+      }
+    ]
+    let menu = new StringSelectMenuBuilder()
+    .setCustomId(`Menu_${interaction.user.id}`)
+    .setPlaceholder("Select a choice!")
+    .setMinValues(1)
+    .setMaxValues(1)
+    .addOptions(options);
+    let msg = await interaction.reply({ embeds: [embed], ephemeral: false,  components: [{ type: 1, components: [menu] }] });
+    let filter = (msg) => interaction.user.id === msg.user.id; 
+    let collector = msg.createMessageComponentCollector({ filter, max: 1, errors: ["time"], time: 120000 });
+    collector.on("collect", (interaction) => {
+      embed = {
+        title: "Streamyfin's info",
+        color: 0x6A0DAD,
+        description: repoResponse.data.description,
+        thumbnail: {
+          url: repoResponse.data.organization.avatar_url
+        },
+        fields: [
+          {
+            name: "Forks",
+            value: repoResponse.data.forks_count.toLocaleString(),
+            inline: true
+           },
+           {
+            name: "Watchers",
+            value: repoResponse.data.watchers.toLocaleString(), 
+            inline: true,
+          },
+          {
+            name: "Stars",
+            value: starCount, 
+            inline: true,
+          },
+          {
+            name: "Language", 
+            value: repoResponse.data.language,
+            inline: true,
+          },
+          {
+            name: "License", 
+            value: repoResponse.data.license.name,
+            inline: true,
+          }
+        ]
+      }
+      interaction.update({ embeds: [embed] });
+    })
+}})
 // Register commands and start the bot
 registerCommands();
 client.login(process.env.DISCORD_TOKEN);
