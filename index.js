@@ -76,7 +76,7 @@ const registerCommands = async () => {
       description: "Get a list of available commands.",
     },
     {
-      name: "testflight",
+      name: "beta",
       description: "Explains how to join the Streamyfin Testflight.",
     },
     {
@@ -129,6 +129,10 @@ const registerCommands = async () => {
       name:"stats", 
       description: "Shows how to support the Streamyfin project."
     },
+    {
+      name:"piracy",
+      description: "Shows how we handle piracy related messages on this discord server."
+    }
   ];
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
