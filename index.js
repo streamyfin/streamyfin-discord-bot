@@ -23,6 +23,9 @@ fs.readdirSync("./commands/").forEach(dir => {
     }
 });
 
+client.on("ready", () => {
+    client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
+})
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isCommand()) return;
     
