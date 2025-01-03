@@ -75,12 +75,12 @@ module.exports = {
       await thread.send(`✅ This issue has been resolved and the GitHub issue is now "${state}" with reason "${stateReason}".`);
       await interaction.reply({ content: "✅ Issue closed successfully.", ephemeral: true });
 
-      // Nachricht eine Minute vor dem Löschen senden
+      // Send message one minute before deletion
       setTimeout(async () => {
         await thread.send("⚠️ This thread will be deleted in 1 minute.");
         setTimeout(async () => {
           await thread.delete();
-        }, 60000); // 60000 Millisekunden = 1 Minute
+        }, 60000); // 60000 milliseconds = 1 minute
       }, 0);
 
     } catch (error) {
