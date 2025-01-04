@@ -70,19 +70,6 @@ module.exports = {
         { state, state_reason: stateReason },
         { headers: { Authorization: `token ${GITHUB_TOKEN}` } }
       );
-
-      await thread.setLocked(true, "Thread closed by developer.");
-      await thread.send(`✅ This issue has been resolved and the GitHub issue is now "${state}" with reason "${stateReason}".`);
-      await interaction.reply({ content: "✅ Issue closed successfully.", ephemeral: true });
-
-      // Send message one minute before deletion
-      setTimeout(async () => {
-        await thread.send("⚠️ This thread will be deleted in 1 minute.");
-        setTimeout(async () => {
-          await thread.delete();
-        }, 60000); // 60000 milliseconds = 1 minute
-      }, 0);
-
     } catch (error) {
       console.error("Error closing issue:", error);
       await interaction.reply({ content: "❌ Failed to close the issue. Please try again.", ephemeral: true });
