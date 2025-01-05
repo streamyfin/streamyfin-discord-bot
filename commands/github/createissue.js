@@ -114,7 +114,6 @@ module.exports = {
 							title: `[Bug]: ${collectedData.title} reported via Discord by [${interaction.user.username}]`,
 							body: body,
 							labels: ["❌ bug"],
-							assignees: ["fredrikburmester"],
 						},
 						{
 							headers: {

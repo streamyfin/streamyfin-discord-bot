@@ -3,7 +3,12 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('featurerequest')
-        .setDescription('Request a new feature for Streamyfin.'),
+        .setDescription('Request a new feature for Streamyfin.')
+        .addStringOption(option =>
+            option.setName('description')
+                .setDescription('The description of the feature you want to request.')
+                .setRequired(true)),
+
     async run(interaction) {
         const description = options.getString("description");
         const targetChannel = interaction.client.channels.cache.get('1273278866105831424');
