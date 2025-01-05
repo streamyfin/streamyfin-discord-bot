@@ -10,7 +10,7 @@ module.exports = {
                 .setRequired(true)),
 
     async run(interaction) {
-        const description = options.getString("description");
+        const description = interaction.options.getString("description");
         const targetChannel = interaction.client.channels.cache.get('1273278866105831424');
         if (!targetChannel) {
             await interaction.reply({ content: '❌ Target channel not found.', ephemeral: true });
@@ -25,4 +25,4 @@ module.exports = {
         await thread.send({ content: `🎉 Thank you for your feature request! Feel free to discuss this feature here!` });
         await interaction.reply({ content: `✅ Your feature request has been submitted and a discussion thread has been created: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${targetChannel.id}/${thread.id})`, ephemeral: true });
     },
-};
+}
