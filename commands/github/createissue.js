@@ -74,6 +74,39 @@ module.exports = {
 		${screenshotsText}
 		`;
 
+				const notifyAndDeleteThread = async (thread) => {
+					try {
+						await thread.send("⚠️ This thread will be deleted in 1 minute because the issue has been closed on GitHub.");
+						setTimeout(async () => {
+							await thread.delete("Issue closed on GitHub.");
+						}, 60000); // Delete after 1 minute
+					} catch (error) {
+						console.error("Error notifying and deleting thread:", error);
+					}
+				};
+
+				const checkIssueClosed = async (issueNumber, thread) => {
+					try {
+						const issueResponse = await axios.get(
+							`${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issueNumber}`,
+							{
+								headers: {
+									Authorization: `token ${GITHUB_TOKEN}`,
+								},
+							}
+						);
+
+						if (issueResponse.data.state === "closed") {
+							notifyAndDeleteThread(thread);
+						} else {
+							setTimeout(() => checkIssueClosed(issueNumber, thread), 60000); // Check again in 1 minute
+						}
+					} catch (error) {
+						console.error("Error checking issue state:", error);
+						setTimeout(() => checkIssueClosed(issueNumber, thread), 60000); // Check again in 1 minute
+					}
+				};
+
 				try {
 					const issueResponse = await axios.post(
 						`${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
@@ -81,7 +114,6 @@ module.exports = {
 							title: `[Bug]: ${collectedData.title} reported via Discord by [${interaction.user.username}]`,
 							body: body,
 							labels: ["❌ bug"],
-							assignees: ["fredrikburmester"],
 						},
 						{
 							headers: {
@@ -92,6 +124,7 @@ module.exports = {
 
 					await thread.send(`✅ Issue created successfully: ${issueResponse.data.html_url}`);
 					await thread.setLocked(true, "Issue details collected and sent to GitHub.");
+					checkIssueClosed(issueResponse.data.number, thread); // Start checking if the issue is closed
 				} catch (error) {
 					console.error("Error creating issue:", error);
 					await thread.send("❌ Failed to create the issue. Please try again.");
