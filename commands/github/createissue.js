@@ -6,10 +6,8 @@ module.exports = {
 		.setName('createissue')
 		.setDescription('Create a new issue on GitHub.'),
 	async run(interaction) {
-		const REPO_OWNER = process.env.REPO_OWNER;
 		const GITHUB_API_BASE = "https://api.github.com";
-		const REPO_NAME = process.env.REPO_NAME;
-		const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+	
 		// Start by creating a private thread in forum
 		const forumChannelId = process.env.FORUM_CHANNEL_ID;
 		const forumChannel = interaction.guild.channels.cache.get(forumChannelId);
@@ -58,58 +56,25 @@ module.exports = {
 					: "No screenshots provided";
 
 				const body = `
-		### What happened?
-		${collectedData.description}
-		
-		### Reproduction steps
-		${collectedData.steps}
-		
-		### Device and operating system
-		${collectedData.device}
-		
-		### Version
-		${collectedData.version}
-		
-		### Screenshots
-		${screenshotsText}
-		`;
+### What happened?
+${collectedData.description}
 
-				const notifyAndDeleteThread = async (thread) => {
-					try {
-						await thread.send("⚠️ This thread will be deleted in 1 minute because the issue has been closed on GitHub.");
-						setTimeout(async () => {
-							await thread.delete("Issue closed on GitHub.");
-						}, 60000); // Delete after 1 minute
-					} catch (error) {
-						console.error("Error notifying and deleting thread:", error);
-					}
-				};
+### Reproduction steps
+${collectedData.steps}
 
-				const checkIssueClosed = async (issueNumber, thread) => {
-					try {
-						const issueResponse = await axios.get(
-							`${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issueNumber}`,
-							{
-								headers: {
-									Authorization: `token ${GITHUB_TOKEN}`,
-								},
-							}
-						);
+### Device and operating system
+${collectedData.device}
 
-						if (issueResponse.data.state === "closed") {
-							notifyAndDeleteThread(thread);
-						} else {
-							setTimeout(() => checkIssueClosed(issueNumber, thread), 60000); // Check again in 1 minute
-						}
-					} catch (error) {
-						console.error("Error checking issue state:", error);
-						setTimeout(() => checkIssueClosed(issueNumber, thread), 60000); // Check again in 1 minute
-					}
-				};
+### Version
+${collectedData.version}
+
+### Screenshots
+${screenshotsText}
+`;
 
 				try {
 					const issueResponse = await axios.post(
-						`${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
+						`${GITHUB_API_BASE}/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues`,
 						{
 							title: `[Bug]: ${collectedData.title} reported via Discord by [${interaction.user.username}]`,
 							body: body,
@@ -117,14 +82,13 @@ module.exports = {
 						},
 						{
 							headers: {
-								Authorization: `token ${GITHUB_TOKEN}`,
+								Authorization: `token ${interaction.client.githubToken}`,
 							},
 						}
 					);
 
 					await thread.send(`✅ Issue created successfully: ${issueResponse.data.html_url}`);
 					await thread.setLocked(true, "Issue details collected and sent to GitHub.");
-					checkIssueClosed(issueResponse.data.number, thread); // Start checking if the issue is closed
 				} catch (error) {
 					console.error("Error creating issue:", error);
 					await thread.send("❌ Failed to create the issue. Please try again.");

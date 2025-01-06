@@ -11,18 +11,15 @@ module.exports = {
                 .setRequired(false)
         ),
     async run(interaction) {
-        const REPO_OWNER = process.env.REPO_OWNER;
-        const REPO_NAME = process.env.REPO_NAME;
-        const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
         const issueNumber = interaction.options.getInteger("number");
 
         if (issueNumber) {
             try {
                 const response = await axios.get(
-                    `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issueNumber}`,
+                    `https://api.github.com/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues/${issueNumber}`,
                     {
                         headers: {
-                            Authorization: `token ${GITHUB_TOKEN}`,
+                            Authorization: `token ${interaction.client.githubToken}`,
                         },
                     }
                 );
@@ -37,7 +34,7 @@ module.exports = {
             return;
         }
 
-        const response = await axios.get(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`);
+        const response = await axios.get(`https://api.github.com/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues`);
         if (!response.data) return interaction.reply("Please provide an issue number");
 
         let options = [];

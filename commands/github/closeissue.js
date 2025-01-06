@@ -25,9 +25,6 @@ module.exports = {
     ),
   async run(interaction) {
     const GITHUB_API_BASE = "https://api.github.com";
-    const REPO_OWNER = process.env.REPO_OWNER;
-    const REPO_NAME = process.env.REPO_NAME;
-    const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
     const allowedRoles = ["Developer", "Administrator"];
     const state = interaction.options.getString("state");
     const stateReason = interaction.options.getString("state_reason");
@@ -66,10 +63,14 @@ module.exports = {
       const issueNumber = issueUrlMatch[1];
 
       await axios.patch(
-        `${GITHUB_API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issueNumber}`,
+        `${GITHUB_API_BASE}/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues/${issueNumber}`,
         { state, state_reason: stateReason },
-        { headers: { Authorization: `token ${GITHUB_TOKEN}` } }
+        { headers: { Authorization: `token ${interaction.client.githubToken}` } }
       );
+
+      await thread.setLocked(true, "Thread closed by developer.");
+      await thread.send(`✅ This issue has been resolved and the GitHub issue is now "${state}" with reason "${stateReason}".`);
+      await interaction.reply({ content: "✅ Issue closed successfully.", ephemeral: true });
     } catch (error) {
       console.error("Error closing issue:", error);
       await interaction.reply({ content: "❌ Failed to close the issue. Please try again.", ephemeral: true });

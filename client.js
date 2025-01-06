@@ -7,6 +7,9 @@ module.exports = class Streamyfin extends Client {
     
     this.commands = new Collection();
     this.userId = '398161771476549654';
+    this.repoOwner = process.env.REPO_OWNER;
+    this.repoName = process.env.REPO_NAME;
+    this.githubToken = process.env.GITHUB_TOKEN;
 
   }
   
@@ -25,10 +28,10 @@ module.exports = class Streamyfin extends Client {
   async fetchReleases(){
     try {
       const response = await axios.get(
-        `${process.env.GITHUB_API_BASE}/repos/${process.env.REPO_OWNER}/${process.env.REPO_NAME}/releases`,
+        `${process.env.GITHUB_API_BASE}/repos/${this.repoOwner}/${this.repoName}/releases`,
         {
           headers: {
-            Authorization: `token ${process.env.GITHUB_TOKEN}`,
+            Authorization: `token ${this.githubToken}`,
           },
         }
       );
