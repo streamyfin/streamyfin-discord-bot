@@ -3,8 +3,6 @@ const Streamyfin = require('./client');
 const { GatewayIntentBits, REST, Routes } = require ("discord.js");
 const fs = require("fs");
 
-// GitHub API base URL and repo data
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
 const tempCommands = []
 
@@ -43,7 +41,7 @@ client.on("interactionCreate", async (interaction) => {
 	}
 })
 const registerCommands = async () => {
-  if (GITHUB_TOKEN) await client.fetchReleases();
+  if (client.githubToken) await client.fetchReleases();
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
