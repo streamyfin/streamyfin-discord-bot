@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Get the link to the GitHub repository.'),
     async run(interaction) {
         await interaction.reply(
-            "📡 Here is our GitHub repository: <https://github.com/fredrikburmester/streamyfin>"
+            "📡 Here is our GitHub repository: <https://github.com/streamyfin/streamyfin>"
         );
     },
 };

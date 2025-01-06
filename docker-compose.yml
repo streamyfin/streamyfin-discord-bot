@@ -1,18 +1,10 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  discord-bot:
-    image: node:18-alpine 
-    container_name: discord-bot
-    working_dir: /app 
-    volumes:
-      - .:/app 
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN} # Discord bot token
-      - CLIENT_ID=${CLIENT_ID}         # Discord bot client ID
-      - GITHUB_TOKEN=${GITHUB_TOKEN}   # GitHub token for API requests
-      - REPO_OWNER=${REPO_OWNER}       # GitHub repository owner
-      - REPO_NAME=${REPO_NAME}         # GitHub repository name
-      - FORUM_CHANNEL_ID=${FORUM_CHANNEL_ID}      
-    command: sh -c "npm install && node index.js" # Install dependencies and run the bot
-    restart: unless-stopped # Restart the container if it crashes
+  streamyfin-discord-bot:
+    image: retardgerman/streamyfin-discord-bot:latest
+    env_file:
+      - .env
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    restart: unless-stopped
