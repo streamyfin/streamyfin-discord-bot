@@ -46,9 +46,7 @@ module.exports = class Streamyfin extends Client {
     } catch (error) {
       console.error("Error fetching releases:", error);
       return [
-        { name: "0.22.0", value: "0.22.0" }, // Fallback data
-        { name: "0.21.0", value: "0.21.0" },
-        { name: "Older", value: "Older" },
+      { name: "unknown", value: "unknown" }, // Fallback data
       ];
     }
   };
