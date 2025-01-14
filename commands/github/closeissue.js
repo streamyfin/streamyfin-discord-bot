@@ -4,7 +4,7 @@ const axios = require ("axios");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('closeissue')
-    .setDescription('Close an issue on GitHub and lock the thread.')
+    .setDescription('Close and lock a GitHub issue.')
     .addStringOption(option =>
       option.setName('state')
         .setDescription('The state to set for the GitHub issue (e.g., open, closed).')

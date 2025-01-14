@@ -4,7 +4,7 @@ const axios = require('axios');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('featurerequest')
-        .setDescription('Request a new feature for Streamyfin.')
+        .setDescription('Request a new feature.')
         .addStringOption(option =>
             option.setName('description')
                 .setDescription('The description of the feature you want to request.')

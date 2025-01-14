@@ -4,7 +4,7 @@ const axios = require ("axios");
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('createissue')
-		.setDescription('Create a new issue on GitHub.'),
+		.setDescription('Create a new GitHub issue.'),
 	async run(interaction) {
 		const GITHUB_API_BASE = "https://api.github.com";
 	

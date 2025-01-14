@@ -4,7 +4,7 @@ const axios = require ("axios");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('stats')
-        .setDescription('Shows how to support the Streamyfin project.'),
+        .setDescription('Contributor leaderboar'),
     async run(interaction) {
 
         const leaderboard = await interaction.client.fetchStats();
