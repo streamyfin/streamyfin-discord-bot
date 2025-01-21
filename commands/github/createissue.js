@@ -74,7 +74,7 @@ ${screenshotsText}
 
 				try {
 					const issueResponse = await axios.post(
-						`${GITHUB_API_BASE}/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues`,
+						`${GITHUB_API_BASE}/repos/${interaction.client.repoOrg}/${interaction.client.repoName}/issues`,
 						{
 							title: `[Bug]: ${collectedData.title} reported via Discord by [${interaction.user.username}]`,
 							body: body,
