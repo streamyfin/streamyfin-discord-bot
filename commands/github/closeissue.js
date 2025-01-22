@@ -63,7 +63,7 @@ module.exports = {
       const issueNumber = issueUrlMatch[1];
 
       await axios.patch(
-        `${GITHUB_API_BASE}/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues/${issueNumber}`,
+        `${GITHUB_API_BASE}/repos/${interaction.client.repoOrg}/${interaction.client.repoName}/issues/${issueNumber}`,
         { state, state_reason: stateReason },
         { headers: { Authorization: `token ${interaction.client.githubToken}` } }
       );

@@ -1,6 +1,6 @@
 require("dotenv").config();
 const Streamyfin = require('./client');
-const { GatewayIntentBits, REST, Routes } = require ("discord.js");
+const { GatewayIntentBits, REST, Routes } = require("discord.js");
 const fs = require("fs");
 
 
@@ -8,43 +8,64 @@ const tempCommands = []
 
 // Initialize Discord client
 const client = new Streamyfin({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
-  
+
 fs.readdirSync("./commands/").forEach(dir => {
-    const files = fs.readdirSync(`./commands/${dir}/`).filter(file => file.endsWith(".js"));
-    for (let file of files) {
-        let props = require(`./commands/${dir}/${file}`);
-        client.commands.set(props.data.name, props);
-        tempCommands.push(props.data)
-        console.log(`[COMMAND] => Loaded ${file} `);
-    }
+  const files = fs.readdirSync(`./commands/${dir}/`).filter(file => file.endsWith(".js"));
+  for (let file of files) {
+    let props = require(`./commands/${dir}/${file}`);
+    client.commands.set(props.data.name, props);
+    tempCommands.push(props.data)
+    console.log(`[COMMAND] => Loaded ${file} `);
+  }
 });
 
 client.on("ready", () => {
-    client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
+  client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
 })
 client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isCommand()) return;
-    
-	const command = client.commands.get(interaction.commandName);
-    if (!command) return;
+  if (!interaction.isCommand()) return;
 
-	try {
-		await command.run(interaction);
-	} catch (error) {
-		console.error(error);
-		await interaction.reply({
-			content: 'There was an error while executing this command!',
-			ephemeral: true,
-		});
-	}
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.run(interaction);
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({
+      content: 'There was an error while executing this command!',
+      ephemeral: true,
+    });
+  }
 })
 
+
+function pirateList(message) {
+  const lowerText = message.toLowerCase();
+  const list = [
+    "pirate",
+    "torrent",
+    "crack",
+    "leak",
+    "P2P",
+    "illegal content",
+    "illegal download",
+    "warez"
+  ];
+  return list.some((keyword) => lowerText.includes(keyword));
+}
+
 client.on('messageCreate', message => {
-  if (message.mentions.has(client.user) && !message.author.bot) {
-    message.reply("Hi there, I'm Finn! I'm a bot written for streamyfin! To find out what I can do, use `/help`!");
+  let pirated = pirateList(message.content)
+  if (pirated) {
+    let command =  client.commands.get("piracy") 
+    command.run(message)
   }
+  if (message.mentions.has(client.user) && !message.author.bot) {
+      message.reply("Hi there, I'm Finn! I'm a bot written for streamyfin! To find out what I can do, use `/help`!");
+    }
 });
 const registerCommands = async () => {
   if (client.githubToken) await client.fetchReleases();

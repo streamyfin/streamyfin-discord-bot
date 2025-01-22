@@ -16,7 +16,7 @@ module.exports = {
         if (issueNumber) {
             try {
                 const response = await axios.get(
-                    `https://api.github.com/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues/${issueNumber}`,
+                    `https://api.github.com/repos/${interaction.client.repoOrg}/${interaction.client.repoName}/issues/${issueNumber}`,
                     {
                         headers: {
                             Authorization: `token ${interaction.client.githubToken}`,
@@ -34,7 +34,7 @@ module.exports = {
             return;
         }
 
-        const response = await axios.get(`https://api.github.com/repos/${interaction.client.repoOwner}/${interaction.client.repoName}/issues`);
+        const response = await axios.get(`https://api.github.com/repos/${interaction.client.repoOrg}/${interaction.client.repoName}/issues`);
         if (!response.data) return interaction.reply("Please provide an issue number");
 
         let options = [];
