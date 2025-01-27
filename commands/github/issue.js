@@ -5,6 +5,11 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('issue')
         .setDescription('Get GitHub issue details.')
+        .addStringOption(option => 
+            option.setName('repo')
+            .setDescription("Repo name of your choice defaults to streamyfin")
+            .setRequired(false)
+        )
         .addIntegerOption(option =>
             option.setName('number')
                 .setDescription('The issue number')
@@ -12,11 +17,21 @@ module.exports = {
         ),
     async run(interaction) {
         const issueNumber = interaction.options.getInteger("number");
+        let repoName = interaction.options.getString("repo");
 
+        if (repoName) {
+            if (!issueNumber) return interaction.reply({ content: "Please provide an issue number.", ephemeral: true})
+        }
+
+        if (!repoName) repoName = interaction.client.repoName
+        let repoCheck = await interaction.client.repoCheck(repoName)
+        if (!repoCheck.exists) {
+            return interaction.reply({content: `${repoName} does not exist.`, ephemeral: true})
+        }
         if (issueNumber) {
             try {
                 const response = await axios.get(
-                    `https://api.github.com/repos/${interaction.client.repoOrg}/${interaction.client.repoName}/issues/${issueNumber}`,
+                    `https://api.github.com/repos/${interaction.client.repoOrg}/${repoName}/issues/${issueNumber}`,
                     {
                         headers: {
                             Authorization: `token ${interaction.client.githubToken}`,
@@ -29,7 +44,7 @@ module.exports = {
                     `🔗 **Issue #${issue.number}: ${issue.title}**\n${issue.html_url}`
                 );
             } catch (error) {
-                await interaction.reply("❌ Issue not found or an error occurred.");
+                await interaction.reply(`❌ Issue not found for ${repoName} or an error occurred.`);
             }
             return;
         }

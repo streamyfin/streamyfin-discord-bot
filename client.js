@@ -50,4 +50,21 @@ module.exports = class Streamyfin extends Client {
       ];
     }
   };
+
+  async repoCheck(repoName) {
+    repoName = repoName.replace(/\s+/g, '-'); 
+    try {
+      const response = await axios.get(`https://api.github.com/repos/${this.repoOrg}/${repoName}`);
+      if (response.data && response.data?.id) {
+        return { exists: true, data: response.data }; 
+      } else {
+        return { exists: false }; 
+      }
+    } catch (error) {
+      console.error('Error checking repository:', error.message);
+      return { exists: false, error: error.message };
+    }
+  }
+  
+  
 };

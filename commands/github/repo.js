@@ -15,42 +15,42 @@ module.exports = {
 
         if (repoName) {
             try {
-                repoName = repoName.replace(/\s+/g, '-');
-                const repo = await axios.get(`https://api.github.com/repos/${interaction.client.repoOrg}/${repoName}`).then(r => r.data)
-                if (!repo) return interaction.reply("Repo does not exist under Streamyfin")
+                const repo = await interaction.client.repoCheck(repoName)
+                if (!repo.exists) return interaction.reply("Repo does not exist under Streamyfin")
                 const embed = {
-                    title: `Repository: ${repo.name}`,
+                    title: `Repository: ${repo.data.name}`,
                     color: 0x6A0DAD,
-                    description: repo.description || "No description.",
+                    description: repo.data.description || "No description.",
                     thumbnail: {
-                        url: repo.owner.avatar_url
+                        url: repo.data.owner.avatar_url
                     },
                     fields: [
                         {
                             name: "Forks",
-                            value: repo.forks_count.toLocaleString(),
+                            value: repo.data.forks_count.toLocaleString(),
                             inline: true
                         },
                         {
                             name: "Open Issues",
-                            value: repo.open_issues_count.toLocaleString(),
+                            value: repo.data.open_issues_count.toLocaleString(),
                             inline: true
                         },
                         {
                             name: "Stars",
-                            value: repo.stargazers_count.toLocaleString(),
+                            value: repo.data.stargazers_count.toLocaleString(),
                             inline: true
                         },
                         {
                             name: "Language",
-                            value: repo.language || "Not specified",
+                            value: repo.data.language || "Not specified",
                             inline: true
                         },
                     ],
-                    url: repo.html_url
+                    url: repo.data.html_url
                 };
                 await interaction.reply({ embeds: [embed] });
             } catch (error) {
+                console.log(error)
                 await interaction.reply("❌ Repo not found or an error occurred.");
             }
             return;
