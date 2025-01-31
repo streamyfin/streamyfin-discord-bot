@@ -42,30 +42,33 @@ client.on("interactionCreate", async (interaction) => {
 })
 
 
-function pirateList(message) {
+function hasPiracyKeywords(message) {
   const lowerText = message.toLowerCase();
-  const list = [
-    "pirate",
-    "torrent",
-    "crack",
-    "leak",
-    "P2P",
-    "illegal content",
-    "illegal download",
-    "warez"
-  ];
-  return list.some((keyword) => lowerText.includes(keyword));
+  const piracyKeywords = [
+    "pirate", "torrent", "crack", "crackme", "leak", "p2p", "illegal content",
+    "illegal download", "downloading", "warez", "camrip", "keygen",
+    "cracked", "leeching", "magnet link", "ddl", "seed", "tracker", "cyberlocker",
+    "ripping", "streaming site", "torrent site", "DHT", "soulseek", "fake release",
+    "subscene", "DMCA takedown"
+  ];  
+  return piracyKeywords.some((keyword) => lowerText.includes(keyword));
 }
 
-client.on('messageCreate', message => {
-  let pirated = pirateList(message.content)
-  if (pirated) {
-    let command =  client.commands.get("piracy") 
-    command.run(message)
+client.on('messageCreate', async (message) => {
+  const hasPiracy = hasPiracyKeywords(message.content);
+  console.log(hasPiracy, isToxic)
+  if (hasPiracy) {
+    const isToxic = await client.checkMessage(message.content);
+    if (isToxic) {
+      const command = client.commands.get("piracy");
+      if (command) {
+        command.run(message);
+      }
+    }
   }
   if (message.mentions.has(client.user) && !message.author.bot) {
-      message.reply("Hi there, I'm Finn! I'm a bot written for streamyfin! To find out what I can do, use `/help`!");
-    }
+    message.reply("Hi there, I'm Finn! I'm a bot written for streamyfin! To find out what I can do, use `/help`!");
+  }
 });
 const registerCommands = async () => {
   if (client.githubToken) await client.fetchReleases();
