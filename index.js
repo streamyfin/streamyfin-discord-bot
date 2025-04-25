@@ -11,13 +11,18 @@ const client = new Streamyfin({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
-fs.readdirSync("./commands/").forEach(dir => {
-  const files = fs.readdirSync(`./commands/${dir}/`).filter(file => file.endsWith(".js"));
+const path = require("path");
+fs.readdirSync("./commands").forEach(dir => {
+  const fullPath = path.join(__dirname, "commands", dir);
+  if (!fs.statSync(fullPath).isDirectory()) return; // 👈 Skip if not a folder
+
+  const files = fs.readdirSync(fullPath).filter(file => file.endsWith(".js"));
   for (let file of files) {
-    let props = require(`./commands/${dir}/${file}`);
+    const filePath = path.join(fullPath, file);
+    const props = require(filePath);
     client.commands.set(props.data.name, props);
-    tempCommands.push(props.data)
-    console.log(`[COMMAND] => Loaded ${file} `);
+    tempCommands.push(props.data);
+    console.log(`[COMMAND] => Loaded ${file}`);
   }
 });
 
