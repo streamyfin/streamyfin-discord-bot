@@ -50,18 +50,41 @@ client.on("interactionCreate", async (interaction) => {
 function hasPiracyKeywords(message) {
   const lowerText = message.toLowerCase();
   const piracyKeywords = [
-    "pirate", "torrent", "crack", "crackme", "leak", "p2p", "illegal content",
-    "illegal download", "downloading", "warez", "camrip", "keygen",
-    "cracked", "leeching", "magnet link", "ddl", "seed", "tracker", "cyberlocker",
-    "ripping", "streaming site", "torrent site", "DHT", "soulseek", "fake release",
-    "subscene", "DMCA takedown"
-  ];  
+    "pirate", "pirates", "pirating",
+    "torrent", "torrents",
+    "crack", "cracks", "crackme",
+    "leak", "leaks", "leaked",
+    "p2p",
+    "illegal content", "illegal contents",
+    "illegal download", "illegal downloads",
+    "downloading",
+    "warez", "scene release", "pre release",
+    "camrip", "camrips", "web-dl", "webdl", "hdrip", "dvdrip", "bd-rip", "bdrip",
+    "keygen", "keygens",
+    "cracked", 
+    "leech", "leeching",
+    "magnet link", "magnet links",
+    "ddl", "ddls", "direct download",
+    "seed", "seeds", "seeder", "seedbox",
+    "tracker", "trackers",
+    "cyberlocker", "cyberlockers",
+    "ripping", "rip", "ripped",
+    "streaming site", "streaming sites",
+    "torrent site", "torrent sites",
+    "indexer", "indexers",
+    "DHT", "soulseek", "irc release",
+    "fake release", "fake releases",
+    "subscene", "opensubtitles", "yify", "rarbg", "1337x", "the pirate bay", "tpb",
+    "nzb", "usenet", "nzb indexer",
+    "mega link", "mediafire", "zippyshare", "anonfiles", "gofile", "1fichier",
+    "repack",
+  ];
   return piracyKeywords.some((keyword) => lowerText.includes(keyword));
 }
 
 client.on('messageCreate', async (message) => {
+  if (!message.guild || message.author.bot) return;
   const hasPiracy = hasPiracyKeywords(message.content);
-  console.log(hasPiracy, isToxic)
   if (hasPiracy) {
     const isToxic = await client.checkMessage(message.content);
     if (isToxic) {
