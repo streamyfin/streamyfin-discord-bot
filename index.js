@@ -48,37 +48,30 @@ client.on("interactionCreate", async (interaction) => {
 
 
 function hasPiracyKeywords(message) {
-  const lowerText = message.toLowerCase();
+  const lowerText = message.trim().toLowerCase();
   const piracyKeywords = [
-    "pirate", "pirates", "pirating",
-    "torrent", "torrents",
-    "crack", "cracks", "crackme",
-    "leak", "leaks", "leaked",
-    "p2p",
-    "illegal content", "illegal contents",
-    "illegal download", "illegal downloads",
-    "downloading",
-    "warez", "scene release", "pre release",
-    "camrip", "camrips", "web-dl", "webdl", "hdrip", "dvdrip", "bd-rip", "bdrip",
-    "keygen", "keygens",
-    "cracked", 
-    "leech", "leeching",
-    "magnet link", "magnet links",
-    "ddl", "ddls", "direct download",
-    "seed", "seeds", "seeder", "seedbox",
-    "tracker", "trackers",
-    "cyberlocker", "cyberlockers",
-    "ripping", "rip", "ripped",
-    "streaming site", "streaming sites",
-    "torrent site", "torrent sites",
-    "indexer", "indexers",
-    "DHT", "soulseek", "irc release",
-    "fake release", "fake releases",
-    "subscene", "opensubtitles", "yify", "rarbg", "1337x", "the pirate bay", "tpb",
-    "nzb", "usenet", "nzb indexer",
-    "mega link", "mediafire", "zippyshare", "anonfiles", "gofile", "1fichier",
-    "repack",
+    "1fichier", "123movies", "1337x",
+    "all-debrid","alldebrid", "anonfiles", "aria2",
+    "bd-rip", "bdrip", "bittorrent", "bluray rip",
+    "camrip", "camrips", "crack", "crackme", "cracked", "cracks", "crackle", "cyberlocker",
+    "cyberlockers", "debrid", "deluge", "direct download", "ddl", "ddls",
+    "downloading", "dvdrip", "DHT", "fake release", "fake releases", "fmovies",
+    "free movies online", "gofile", "gogoanime", "gomovies", "HD cam",
+    "indexer", "indexers", "irc release", "jdownloader",
+    "keygen", "keygens", "kimcartoon",
+    "leech", "leeching", "leak", "leaks", "leaked", "mediafire",
+    "mega link", "no ads streaming", "no sign up streaming",
+    "nzb", "nzb indexer", "opensubtitles",
+    "p2p", "pirate", "pirates", "pirating", "popcorn time", "pre release",
+    "putlocker", "qbittorrent",
+    "rarbg", "real debrid", "real-debrid", "repack", "ripping", "rip", "ripped",
+    "scene group", "scene release", "seed", "seeder", "seedbox", "seeds", "soulseek", "soap2day", "solarmovie",
+    "stremio", "stremio add-on", "stremio addon", "streaming site", "streaming sites", "streamtape",
+    "subscene", "telecine", "telesync", "torrent", "torrent site", "torrent sites",
+    "torrents", "tpb", "the pirate bay", "transmission", "utorrent",
+    "videobin", "watch free", "warez", "yesmovies", "yify"
   ];
+
   return piracyKeywords.some((keyword) => lowerText.includes(keyword));
 }
 
