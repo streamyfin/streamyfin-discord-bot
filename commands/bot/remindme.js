@@ -7,7 +7,6 @@ const redisClient = createClient({
 
 redisClient.connect().catch(console.error);
 
-const ALLOWED_CATEGORIES = ['1275045563766800397'];
 
 const TIME_LIMITS = {
     minutes: 1440,
@@ -40,14 +39,6 @@ module.exports = {
                     { name: 'Weeks', value: 'weeks' }
                 )), 
     async run(interaction) {
-        const channel = interaction.channel;
-        if (!ALLOWED_CATEGORIES.includes(channel.parentId)) {
-            return await interaction.reply({
-                content: '❌ You can only use this command in our Team Channels!',
-                ephemeral: true
-            });
-        }
-
         try {
             const text = interaction.options.getString('text');
             const timeAmount = interaction.options.getInteger('time');
@@ -85,7 +76,7 @@ module.exports = {
 
             const timeString = `${timeAmount} ${timeUnit}`;
             await interaction.reply({
-                content: `✅ I will remind you about "${text}" in ${timeString}`,
+                content: `✅ I will remind you about ${text} in ${timeString}`,
                 ephemeral: true
             });
 
