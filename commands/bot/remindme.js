@@ -17,9 +17,29 @@ const TIME_LIMITS = {
 };
 
 module.exports = {
-    // ...existing code für SlashCommandBuilder...
-
-    async execute(interaction) {
+    data: new SlashCommandBuilder()
+        .setName('remindme')
+        .setDescription('Set a reminder.')
+        .addStringOption(option =>
+            option.setName('text')
+                .setDescription('What should I remind you about?')
+                .setRequired(true))
+        .addIntegerOption(option =>
+            option.setName('time')
+                .setDescription('Amount of time')
+                .setRequired(true)
+                .setMinValue(1))
+        .addStringOption(option =>
+            option.setName('unit')
+                .setDescription('Minutes, hours, days, or weeks?')
+                .setRequired(true)
+                .addChoices(
+                    { name: 'Minutes', value: 'minutes' },
+                    { name: 'Hours', value: 'hours' },
+                    { name: 'Days', value: 'days' },
+                    { name: 'Weeks', value: 'weeks' }
+                )), 
+    async run(interaction) {
         const channel = interaction.channel;
         if (!ALLOWED_CATEGORIES.includes(channel.parentId)) {
             return await interaction.reply({
