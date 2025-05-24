@@ -10,8 +10,6 @@ services:
 
   streamyfin-discord-bot:
     image: retardgerman/streamyfin-discord-bot:latest
-    env_file:
-      - .env
     environment:
       - REDIS_URL=redis://redis:6379
       - DISCORD_TOKEN=<your_discord_bot_token>
