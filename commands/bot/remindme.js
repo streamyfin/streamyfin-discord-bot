@@ -44,7 +44,14 @@ module.exports = {
             const timeAmount = interaction.options.getInteger('time');
             const timeUnit = interaction.options.getString('unit');
             const userId = interaction.user.id;
+            const channel = interaction.channel;
 
+            if (!channel.permissionsFor(channel.guild.members.me).has('ViewChannel') || !channel.permissionsFor(channel.guild.members.me).has('SendMessages')) {
+                return await interaction.reply({
+                    content: '❌ I cannot send messages in this channel. Please check my permissions.',
+                    ephemeral: true
+                });
+            }
             if(timeAmount > TIME_LIMITS[timeUnit]) {
                 return await interaction.reply({
                     content: `❌ You cannot set a reminder for more than ${TIME_LIMITS[timeUnit]} ${timeUnit}!`,
