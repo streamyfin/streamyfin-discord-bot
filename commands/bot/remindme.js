@@ -1,4 +1,4 @@
-const {SlashCommandBuilder} = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { createClient } = require('redis');
 
 const redisClient = createClient({
@@ -37,14 +37,14 @@ module.exports = {
                     { name: 'Hours', value: 'hours' },
                     { name: 'Days', value: 'days' },
                     { name: 'Weeks', value: 'weeks' }
-                )), 
+                )),
     async run(interaction) {
         try {
-            const text = interaction.options.getString('text');
             const timeAmount = interaction.options.getInteger('time');
             const timeUnit = interaction.options.getString('unit');
             const userId = interaction.user.id;
             const channel = interaction.channel;
+            const text = interaction.options.getString('text');
 
             if (!channel.permissionsFor(channel.guild.members.me).has('ViewChannel') || !channel.permissionsFor(channel.guild.members.me).has('SendMessages')) {
                 return await interaction.reply({
@@ -52,7 +52,7 @@ module.exports = {
                     ephemeral: true
                 });
             }
-            if(timeAmount > TIME_LIMITS[timeUnit]) {
+            if (timeAmount > TIME_LIMITS[timeUnit]) {
                 return await interaction.reply({
                     content: `❌ You cannot set a reminder for more than ${TIME_LIMITS[timeUnit]} ${timeUnit}!`,
                     ephemeral: true
@@ -75,7 +75,7 @@ module.exports = {
                 reminderTime,
                 channelId: interaction.channelId
             };
-            
+
             await redisClient.hSet(
                 `reminder:${userId}:${reminderTime}`,
                 reminder
@@ -90,7 +90,10 @@ module.exports = {
             setTimeout(async () => {
                 try {
                     const channel = await interaction.client.channels.fetch(reminder.channelId);
-                    await channel.send(`<@${userId}> Reminder: ${text}`);
+                    await channel.send({
+                        content: `<@${userId}> Reminder: ${text}`,
+                        allowedMentions: { parse: [] },
+                    });
                     await redisClient.del(`reminder:${userId}:${reminderTime}`);
                 } catch (error) {
                     console.error('Error sending reminder:', error);
@@ -98,9 +101,9 @@ module.exports = {
             }, ms);
         } catch (error) {
             console.error('Error setting reminder:', error);
-            await interaction.reply({ 
-                content: '❌ An error occurred while setting the reminder.', 
-                ephemeral: true 
+            await interaction.reply({
+                content: '❌ An error occurred while setting the reminder.',
+                ephemeral: true
             });
         }
     }
