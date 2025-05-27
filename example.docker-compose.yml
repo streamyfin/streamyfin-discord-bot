@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    labels:
+      - com.centurylinklabs.watchtower.enable=false
+    volumes:
+      - redis_data:/data
+
+  streamyfin-discord-bot:
+    image: retardgerman/streamyfin-discord-bot:latest
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DISCORD_TOKEN=<your_discord_bot_token>
+      - CLIENT_ID=<your_discord_bot_client_id>
+      - GITHUB_TOKEN=<your_github_token>
+      - GITHUB_API_BASE=https://api.github.com
+      - REPO_ORG=<your_repo_org>
+      - REPO_NAME=<your_repo_name>
+      - FORUM_CHANNEL_ID=<your_forum_channel_id>
+      - PERSPECTIVE_APIKEY=<your_perspective_api_key> 
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+volumes:
+  redis_data:
+      

@@ -1,25 +1,25 @@
-# Node.js-Module
+# Node.js modules
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Umgebungsvariablen
+# Environment variables
 .env
 
-# Betriebssystemspezifische Dateien
+# Operating system files
 .DS_Store
 Thumbs.db
 
-# Log-Dateien
+# Log files
 logs/
 *.log
 
-# IDE-spezifische Dateien
+# IDE specific files
 .vscode/
 .idea/
 
-# Temporäre Dateien
+# Temporary files
 *.tmp
 *.temp
 *.bak
@@ -27,6 +27,9 @@ logs/
 *.swo
 *.swn
 
-# Git-spezifische Dateien
+# Git specific files
 *.orig
 *.lock
+
+# Docker files
+docker-compose.yml
