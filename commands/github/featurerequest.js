@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonStyle, ButtonBuilder, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonStyle, ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
 const axios = require('axios');
 
 module.exports = {
@@ -23,7 +23,7 @@ module.exports = {
         modal.addComponents(new ActionRowBuilder().addComponents(usernameInput));
 
         if (!targetChannel) {
-            await interaction.reply({ content: '❌ Target channel not found.', ephemeral: true });
+            await interaction.reply({ content: '❌ Target channel not found.', flags: MessageFlags.Ephemeral });
             return;
         }
 
@@ -33,7 +33,7 @@ module.exports = {
         });
 
         await thread.send({ content: `🎉 Thank you for your feature request! Feel free to discuss this feature here!`, components: [row] });
-        await interaction.reply({ content: `✅ Your feature request has been submitted and a discussion thread has been created: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${targetChannel.id}/${thread.id})`, ephemeral: true });
+        await interaction.reply({ content: `✅ Your feature request has been submitted and a discussion thread has been created: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${targetChannel.id}/${thread.id})`, flags: MessageFlags.Ephemeral });
 
         const filter = (i) => i.user.id === interaction.user.id;
         const collector = thread.createMessageComponentCollector({ filter, time: 60000 });
@@ -41,7 +41,7 @@ module.exports = {
         collector.on('collect', async i => {
             if (i.customId === 'submit') {
                 if (!memberRoles.some((role) => allowedRoles.includes(role))) {
-                    await i.reply({ content: `❌ <#${interaction.user.id}>, You do not have permission to submit this to github.`, ephemeral: true });
+                    await i.reply({ content: `❌ <#${interaction.user.id}>, You do not have permission to submit this to github.`, flags: MessageFlags.Ephemeral });
                 } else {
                     await i.showModal(modal);
                 }
@@ -53,7 +53,7 @@ module.exports = {
             if (modalInteraction.customId === 'githubModal') {
                 const githubUsername = modalInteraction.fields.getTextInputValue('username');
                 const r = await axios.get(`https://api.github.com/users/${githubUsername}`);
-                if (!(r.data.login === githubUsername)) await modalInteraction.reply({ content: `❌ Github username ${githubUsername} is not valid.`, ephemeral: true });
+                if (!(r.data.login === githubUsername)) await modalInteraction.reply({ content: `❌ Github username ${githubUsername} is not valid.`, flags: MessageFlags.Ephemeral });
 
                 try {
                     const response = await axios.post(

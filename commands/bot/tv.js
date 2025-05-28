@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('We´re working on it!'),  
         
     async run(interaction) {
-        await interaction.reply("We're working on it! :sweat_smile: <https://github.com/streamyfin/streamyfin/pull/374>"      
+        await interaction.reply("We're working on it, but don't think it will arrive soon :).",      
         ); 
     },
 };

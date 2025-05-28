@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, MessageFlags } = require('discord.js');
 const axios = require ("axios");
 
 module.exports = {
@@ -33,13 +33,13 @@ module.exports = {
     // Check if the user has the required role
     const memberRoles = interaction.member.roles.cache.map((role) => role.name);
     if (!memberRoles.some((role) => allowedRoles.includes(role))) {
-      await interaction.reply({ content: "❌ You do not have permission to use this command.", ephemeral: true });
+      await interaction.reply({ content: "❌ You do not have permission to use this command.", flags: MessageFlags.Ephemeral });
       return;
     }
 
     // Check if the command is executed in a forum thread
     if (thread.type !== ChannelType.PublicThread && thread.type !== ChannelType.PrivateThread) {
-      await interaction.reply({ content: "❌ This command can only be used in a forum thread.", ephemeral: true });
+      await interaction.reply({ content: "❌ This command can only be used in a forum thread.", flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -50,13 +50,13 @@ module.exports = {
       );
 
       if (!githubLinkMessage) {
-        await interaction.reply({ content: "❌ No GitHub link found in the thread.", ephemeral: true });
+        await interaction.reply({ content: "❌ No GitHub link found in the thread.", flags: MessageFlags.Ephemeral });
         return;
       }
 
       const issueUrlMatch = githubLinkMessage.content.match(/\/issues\/(\d+)/);
       if (!issueUrlMatch) {
-        await interaction.reply({ content: "❌ Invalid GitHub link in the thread.", ephemeral: true });
+        await interaction.reply({ content: "❌ Invalid GitHub link in the thread.", flags: MessageFlags.Ephemeral });
         return;
       }
 
@@ -70,10 +70,10 @@ module.exports = {
 
       await thread.setLocked(true, "Thread closed by developer.");
       await thread.send(`✅ This issue has been resolved and the GitHub issue is now "${state}" with reason "${stateReason}".`);
-      await interaction.reply({ content: "✅ Issue closed successfully.", ephemeral: true });
+      await interaction.reply({ content: "✅ Issue closed successfully.", flags: MessageFlags.Ephemeral });
     } catch (error) {
       console.error("Error closing issue:", error);
-      await interaction.reply({ content: "❌ Failed to close the issue. Please try again.", ephemeral: true });
+      await interaction.reply({ content: "❌ Failed to close the issue. Please try again.", flags: MessageFlags.Ephemeral });
     }
   },
 };

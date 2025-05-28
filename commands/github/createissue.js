@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChannelType, MessageCollector } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, MessageCollector, MessageFlags } = require('discord.js');
 const axios = require ("axios");
 
 module.exports = {
@@ -15,7 +15,7 @@ module.exports = {
 		if (!forumChannel || forumChannel.type !== ChannelType.GuildForum) {
 			await interaction.reply({
 				content: "❌ Forum channel not found or is not a forum channel.",
-				ephemeral: true,
+				flags: MessageFlags.Ephemeral
 			});
 			return;
 		}

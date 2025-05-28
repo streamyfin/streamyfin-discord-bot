@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { createClient } = require('redis');
 
 const redisClient = createClient({
@@ -49,13 +49,13 @@ module.exports = {
             if (!channel.permissionsFor(channel.guild.members.me).has('ViewChannel') || !channel.permissionsFor(channel.guild.members.me).has('SendMessages')) {
                 return await interaction.reply({
                     content: '❌ I cannot send messages in this channel. Please check my permissions.',
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
             if (timeAmount > TIME_LIMITS[timeUnit]) {
                 return await interaction.reply({
                     content: `❌ You cannot set a reminder for more than ${TIME_LIMITS[timeUnit]} ${timeUnit}!`,
-                    ephemeral: true
+                    flags: MessageFlags.Ephemeral
                 });
             }
 
@@ -84,7 +84,7 @@ module.exports = {
             const timeString = `${timeAmount} ${timeUnit}`;
             await interaction.reply({
                 content: `✅ I will remind you about ${text} in ${timeString}`,
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
 
             setTimeout(async () => {
@@ -103,7 +103,7 @@ module.exports = {
             console.error('Error setting reminder:', error);
             await interaction.reply({
                 content: '❌ An error occurred while setting the reminder.',
-                ephemeral: true
+                flags: MessageFlags.Ephemeral
             });
         }
     }
