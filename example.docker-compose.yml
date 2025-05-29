@@ -21,7 +21,8 @@ services:
       - REPO_ORG=<your_repo_org>
       - REPO_NAME=<your_repo_name>
       - FORUM_CHANNEL_ID=<your_forum_channel_id>
-      - PERSPECTIVE_APIKEY=<your_perspective_api_key> 
+      - PERSPECTIVE_APIKEY=<your_perspective_api_key>
+      - OLLAMA_URL=<your_ollama_url>
     labels:
       - com.centurylinklabs.watchtower.enable=true
     restart: unless-stopped
