@@ -1,6 +1,7 @@
 require("dotenv").config();
 const Streamyfin = require('./client');
 const { GatewayIntentBits, REST, Routes } = require("discord.js");
+const { eldr } = require("eldr");
 const fs = require("fs");
 const tempCommands = []
 
