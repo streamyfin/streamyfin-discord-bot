@@ -2,8 +2,7 @@ require("dotenv").config();
 const Streamyfin = require('./client');
 const { GatewayIntentBits, REST, Routes } = require("discord.js");
 const fs = require("fs");
-
-
+const { eldr } = require("eldr");
 const tempCommands = []
 
 // Initialize Discord client
@@ -51,7 +50,7 @@ function hasPiracyKeywords(message) {
   const lowerText = message.trim().toLowerCase();
   const piracyKeywords = [
     "1fichier", "123movies", "1337x",
-    "all-debrid","alldebrid", "anonfiles", "aria2",
+    "all-debrid", "alldebrid", "anonfiles", "aria2",
     "bd-rip", "bdrip", "bittorrent", "bluray rip",
     "camrip", "camrips", "crack", "crackme", "cracked", "cracks", "crackle", "cyberlocker",
     "cyberlockers", "debrid", "deluge", "direct download", "ddl", "ddls",
@@ -64,19 +63,29 @@ function hasPiracyKeywords(message) {
     "nzb", "nzb indexer", "opensubtitles",
     "p2p", "pirate", "pirates", "pirating", "popcorn time", "pre release",
     "putlocker", "qbittorrent",
-    "rarbg", "real debrid", "real-debrid", "repack", "ripping", "rip", "ripped",
+    "rarbg", "real debrid", "real-debrid", "repack",
     "scene group", "scene release", "seed", "seeder", "seedbox", "seeds", "soulseek", "soap2day", "solarmovie",
     "stremio", "stremio add-on", "stremio addon", "streaming site", "streaming sites", "streamtape",
     "subscene", "telecine", "telesync", "torrent", "torrent site", "torrent sites",
     "torrents", "tpb", "the pirate bay", "transmission", "utorrent",
     "videobin", "watch free", "warez", "yesmovies", "yify"
   ];
-
   return piracyKeywords.some((keyword) => lowerText.includes(keyword));
 }
 
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
+  let unitConversion = client.convertUnits(message.content);
+  if (unitConversion !== null) message.reply(unitConversion)
+  const LangDetected = eldr.detect(message.content);
+  const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en" ) || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
+  //console.log(LangDetected, isEnglish, message.content);
+  if (!isEnglish && message.content.length > 35) {
+    const translatedJSON = await client.ollamaTranslate(message.content)
+    if (translatedJSON && translatedJSON.translated) {
+      message.reply(`I noticed you sent a message in a different language.\n${translatedJSON.text}`);
+    }
+  }
   const hasPiracy = hasPiracyKeywords(message.content);
   if (hasPiracy) {
     const isToxic = await client.checkMessage(message.content);
