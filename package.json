@@ -15,7 +15,7 @@
     "axios": "^1.7.9",
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.7",
-    "eld": "^1.0.1",
+    "eldr": "github:bkw/eldr",
     "ollama": "^0.5.15",
     "redis": "^5.1.0"
   }

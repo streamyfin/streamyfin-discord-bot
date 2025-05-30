@@ -3,7 +3,7 @@ dotenv.config();
 
 import Streamyfin from './client.js';
 import { GatewayIntentBits, REST, Routes } from 'discord.js';
-import { eld } from 'eld';
+import { eldr } from 'eldr'; 
 import fs from 'fs';
 
 const tempCommands = []
@@ -85,7 +85,7 @@ client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
-  const LangDetected = eld.detect(message.content);
+  const LangDetected = eldr.detect(message.content);
   const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en" ) || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
   console.log(LangDetected.getScores(), isEnglish, message.content);
   if (!isEnglish && message.content.length > 30) {
