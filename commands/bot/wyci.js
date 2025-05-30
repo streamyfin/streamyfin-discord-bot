@@ -1,6 +1,6 @@
-const {SlashCommandBuilder} = require('discord.js')
+import { SlashCommandBuilder } from 'discord.js';
 
-module.exports = {
+export default {
     data: new SlashCommandBuilder()
         .setName('wyci')
         .setDescription('When we will add feature xy to Streamyfin?'),

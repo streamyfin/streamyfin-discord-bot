@@ -1,6 +1,7 @@
-const { SlashCommandBuilder } = require('discord.js');
+import { SlashCommandBuilder } from 'discord.js';
 
-module.exports = {
+
+export default {
 	data: new SlashCommandBuilder()
 		.setName('donate')
 		.setDescription('Support the Streamyfin project.'),

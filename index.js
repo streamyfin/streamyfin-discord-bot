@@ -1,8 +1,11 @@
-require("dotenv").config();
-const Streamyfin = require('./client');
-const { GatewayIntentBits, REST, Routes } = require("discord.js");
-const { eldr } = require("eldr");
-const fs = require("fs");
+import dotenv from 'dotenv';
+dotenv.config();
+
+import Streamyfin from './client.js';
+import { GatewayIntentBits, REST, Routes } from 'discord.js';
+import { eld } from 'eld';
+import fs from 'fs';
+
 const tempCommands = []
 
 // Initialize Discord client
@@ -10,17 +13,22 @@ const client = new Streamyfin({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
-const path = require("path");
-fs.readdirSync("./commands").forEach(dir => {
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+fs.readdirSync("./commands").forEach(async dir => {
   const fullPath = path.join(__dirname, "commands", dir);
   if (!fs.statSync(fullPath).isDirectory()) return; // 👈 Skip if not a folder
 
   const files = fs.readdirSync(fullPath).filter(file => file.endsWith(".js"));
   for (let file of files) {
     const filePath = path.join(fullPath, file);
-    const props = require(filePath);
-    client.commands.set(props.data.name, props);
-    tempCommands.push(props.data);
+    const props = await import(filePath);
+    client.commands.set(props.default.data.name, props.default);
+    tempCommands.push(props.default.data);
     console.log(`[COMMAND] => Loaded ${file}`);
   }
 });
@@ -77,10 +85,10 @@ client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
-  const LangDetected = eldr.detect(message.content);
+  const LangDetected = eld.detect(message.content);
   const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en" ) || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
-  //console.log(LangDetected, isEnglish, message.content);
-  if (!isEnglish && message.content.length > 35) {
+  console.log(LangDetected.getScores(), isEnglish, message.content);
+  if (!isEnglish && message.content.length > 30) {
     const translatedJSON = await client.ollamaTranslate(message.content)
     if (translatedJSON && translatedJSON.translated) {
       message.reply(`I noticed you sent a message in a different language.\n${translatedJSON.text}`);

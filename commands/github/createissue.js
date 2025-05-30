@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, ChannelType, MessageCollector, MessageFlags } = require('discord.js');
-const axios = require ("axios");
+import { SlashCommandBuilder, ChannelType, MessageCollector, MessageFlags } from 'discord.js';
+import axios from 'axios';
 
-module.exports = {
+export default {
 	data: new SlashCommandBuilder()
 		.setName('createissue')
 		.setDescription('Create a new GitHub issue.'),

@@ -1,7 +1,8 @@
-const { SlashCommandBuilder, StringSelectMenuBuilder } = require('discord.js');
-const axios = require("axios");
+import { SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
+import axios from 'axios';
 
-module.exports = {
+
+export default {
     data: new SlashCommandBuilder()
         .setName('repo')
         .setDescription('Link to the GitHub repository.')

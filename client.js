@@ -1,8 +1,9 @@
-const { Client, Collection, EmbedBuilder } = require("discord.js");
-const axios = require("axios");
-const { Ollama } = require("ollama")
+import { Client, Collection } from 'discord.js';
+import axios from 'axios';
+import { Ollama } from 'ollama';
 
-module.exports = class Streamyfin extends Client {
+
+export default class Streamyfin extends Client {
   constructor(...options) {
     super(...options);
 

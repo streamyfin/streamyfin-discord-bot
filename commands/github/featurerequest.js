@@ -1,7 +1,17 @@
-const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ButtonStyle, ButtonBuilder, ActionRowBuilder, MessageFlags } = require('discord.js');
-const axios = require('axios');
+import {
+    SlashCommandBuilder,
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ButtonStyle,
+    ButtonBuilder,
+    ActionRowBuilder,
+    MessageFlags
+} from 'discord.js';
+import axios from 'axios';
 
-module.exports = {
+
+export default {
     data: new SlashCommandBuilder()
         .setName('featurerequest')
         .setDescription('Request a new feature.')

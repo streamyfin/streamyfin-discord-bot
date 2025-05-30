@@ -1,5 +1,5 @@
-const { SlashCommandBuilder, MessageFlags } = require('discord.js');
-const { createClient } = require('redis');
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { createClient } from 'redis';
 
 const redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379'
@@ -15,7 +15,7 @@ const TIME_LIMITS = {
     weeks: 52
 };
 
-module.exports = {
+export default {
     data: new SlashCommandBuilder()
         .setName('remindme')
         .setDescription('Set a reminder.')
