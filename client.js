@@ -85,7 +85,7 @@ export default class Streamyfin extends Client {
     const isChannel = /#\w+/g;
     const isLink = /https?:\/\/[^\s]+/g;
     if (isEmoji.test(text.trim()) || isLink.test(text) || isMentions.test(text) || isChannel.test(text)) return;
-
+    console.log(text)
     try {
       const prompt = `
 You are a translation assistant.
@@ -114,7 +114,7 @@ Follow the following rules:
         stream: false,
         keep_alive: "2h"
       });
-
+      console.log(translated)
       if (translated.done) {
         return { translated: true, text: translated.response };
       } else {

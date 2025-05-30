@@ -87,8 +87,9 @@ client.on('messageCreate', async (message) => {
   if (unitConversion !== null) message.reply(unitConversion)
   const LangDetected = eldr.detect(message.content);
   const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en" ) || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
-  console.log(LangDetected.getScores(), isEnglish, message.content);
-  if (!isEnglish && message.content.length > 30) {
+  const cjkRegex = /[\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7af]/;
+  //console.log(LangDetected.getScores(), isEnglish, cjkRegex.test(message.content), message.content.length);
+  if (!isEnglish && (cjkRegex.test(message.content) || message.content.length >= 27)) {
     const translatedJSON = await client.ollamaTranslate(message.content)
     if (translatedJSON && translatedJSON.translated) {
       message.reply(`I noticed you sent a message in a different language.\n${translatedJSON.text}`);
