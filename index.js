@@ -3,11 +3,27 @@ dotenv.config();
 
 import Streamyfin from './client.js';
 import { GatewayIntentBits, REST, Routes } from 'discord.js';
-import { eldr } from 'eldr'; 
+import { eldr } from 'eldr';
 import fs from 'fs';
 
 const tempCommands = []
+function importNonEnglishTrolls() {
+  try {
+    return JSON.parse(process.env.PEOPLE_TO_TROLL).map(String);
+  } catch (error) {
+    console.log("no trolling")
+  }
+}
+const nonEnglishTrolls = importNonEnglishTrolls()
+function importChannelsToSkip() {
+  try {
+    return JSON.parse(process.env.CHANNELS_TO_SKIP).map(String);
+  } catch (error) {
+    console.log("no channels will be skipped")
+  }
 
+}
+const channelsToSkip = importChannelsToSkip();
 // Initialize Discord client
 const client = new Streamyfin({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -82,18 +98,25 @@ function hasPiracyKeywords(message) {
 }
 
 client.on('messageCreate', async (message) => {
-  if (!message.guild || message.author.bot) return;
+  if (!message.guild || message.author.bot || (channelsToSkip && channelsToSkip.includes(message.channelId))) return;
+  if (nonEnglishTrolls && nonEnglishTrolls.includes(message.author.id)) {
+    message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
+    return;
+  }
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
   const LangDetected = eldr.detect(message.content);
-  const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en" ) || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
+  const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en") || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
   const cjkRegex = /[\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7af]/;
   //console.log(LangDetected.getScores(), isEnglish, cjkRegex.test(message.content), message.content.length);
-  if (!isEnglish && (cjkRegex.test(message.content) || message.content.length >= 27)) {
+  if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27) && nonEnglishTrolls.includes(message.author.id))) {
     const translatedJSON = await client.ollamaTranslate(message.content)
     if (translatedJSON && translatedJSON.translated) {
       message.reply(`${translatedJSON.text}`);
     }
+  }
+  else if (!isEnglish && nonEnglishTrolls.includes(message.author.id)) {
+    message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
   }
   const hasPiracy = hasPiracyKeywords(message.content);
   if (hasPiracy) {
