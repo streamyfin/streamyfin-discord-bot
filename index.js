@@ -98,26 +98,29 @@ function hasPiracyKeywords(message) {
 }
 
 client.on('messageCreate', async (message) => {
-  if (!message.guild || message.author.bot || (channelsToSkip && channelsToSkip.includes(message.channelId))) return;
-  if (nonEnglishTrolls && nonEnglishTrolls.includes(message.author.id)) {
-    message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
-    return;
-  }
+  if (!message.guild || message.author.bot) return;
+
+  //console.log(LangDetected.getScores(), isEnglish, cjkRegex.test(message.content), message.content.length);
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
-  const LangDetected = eldr.detect(message.content);
-  const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en") || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
-  const cjkRegex = /[\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7af]/;
-  //console.log(LangDetected.getScores(), isEnglish, cjkRegex.test(message.content), message.content.length);
-  if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27) && nonEnglishTrolls.includes(message.author.id))) {
-    const translatedJSON = await client.ollamaTranslate(message.content)
-    if (translatedJSON && translatedJSON.translated) {
-      message.reply(`${translatedJSON.text}`);
+    
+  if (!(channelsToSkip && channelsToSkip.includes(message.channelId))) {
+
+    const LangDetected = eldr.detect(message.content);
+    const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en") || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
+    const cjkRegex = /[\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7af]/;
+
+    if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27) && nonEnglishTrolls.includes(message.author.id))) {
+      const translatedJSON = await client.ollamaTranslate(message.content)
+      if (translatedJSON && translatedJSON.translated) {
+        message.reply(`${translatedJSON.text}`);
+      }
+    }
+    else if (!isEnglish && nonEnglishTrolls.includes(message.author.id)) {
+      message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
     }
   }
-  else if (!isEnglish && nonEnglishTrolls.includes(message.author.id)) {
-    message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
-  }
+
   const hasPiracy = hasPiracyKeywords(message.content);
   if (hasPiracy) {
     const isToxic = await client.checkMessage(message.content);
