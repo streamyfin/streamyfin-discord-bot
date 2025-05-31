@@ -92,7 +92,7 @@ client.on('messageCreate', async (message) => {
   if (!isEnglish && (cjkRegex.test(message.content) || message.content.length >= 27)) {
     const translatedJSON = await client.ollamaTranslate(message.content)
     if (translatedJSON && translatedJSON.translated) {
-      message.reply(`I noticed you sent a message in a different language.\n${translatedJSON.text}`);
+      message.reply(`${translatedJSON.text}`);
     }
   }
   const hasPiracy = hasPiracyKeywords(message.content);
