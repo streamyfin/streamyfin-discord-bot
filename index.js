@@ -73,30 +73,30 @@ client.on("interactionCreate", async (interaction) => {
 function hasPiracyKeywords(message) {
   const lowerText = message.trim().toLowerCase();
   const piracyKeywords = [
-  "1fichier", "123movies", "1337x", "all-debrid", "alldebrid", "anonfiles",
-  "aria2", "bayfiles", "bd-rip", "bdrip", "bluray rip", "camrip",
-  "camrips", "codex", "crackingpatching", "crackle", "cyberlocker", "cyberlockers",
-  "ddl", "ddls", "debrid", "deluge", "direct download", "dood.so",
-  "dood.watch", "doodstream" "dvdrip", "DHT", "easybytez",
-  "eztvx", "fake release", "fake releases", "filecrypt", "fitgirl", "flixtor",
-  "flixtor.to", "flixhq", "fmovies", "free movies online", "gofile", "gogoanime",
-  "gomovies", "HD cam", "igg-games", "indexer", "indexers", "irc release",
-  "jdownloader", "katcr", "katcr.co", "keygen", "keygens", "kickass.to",
-  "kickasstorrents", "leech", "leeching", "lookmovie", "mediafire", "mega link",
-  "monova", "moviesjoy", "myflixer", "no ads streaming", "no sign up streaming", "nzb",
-  "nzb indexer", "openload", "p2p", "peerflix", "popcorn time", "primewire",
-  "projectfreetv", "prostylex", "putlocker", "qbittorrent", "r/CrackWatch", "r/GenP",
-  "r/jellyfinshare", "r/jellyfinshared", "r/megalinks", "r/megathread", "r/piracy", "rarbg",
-  "rarbg.to", "rapidgator", "real debrid", "real-debrid", "repack", "scene group",
-  "scene release", "seed", "seeder", "seedbox", "seeds", "skidrow",
-  "soap2day", "solarmovie", "soundseek", "streamango", "streamcloud", "streaming site",
-  "streaming sites", "streamsb", "streamtape", "streamwish", "superbits", "telecine",
-  "telesync", "the pirate bay", "torlock", "torrent", "torrentbytes", "torrentdownloads",
-  "torrentfunk", "torrentgalaxy", "torrenthound", "torrentleech", "torrentproject", "torrents",
-  "torrentsite", "torrentsites", "torrentz", "torrentz2", "tpb", "transmission",
-  "uploadgig", "uptobox", "utorrent", "vidcloud", "vidcloud9", "videobin",
-  "vidlox", "warez", "watchseries", "yesmovies", "yify", "yts.mx",
-  "zippyshare"
+    "1fichier", "123movies", "1337x", "all-debrid", "alldebrid", "anonfiles",
+    "aria2", "bayfiles", "bd-rip", "bdrip", "bluray rip", "camrip",
+    "camrips", "codex", "crackingpatching", "crackle", "cyberlocker", "cyberlockers",
+    "ddl", "ddls", "debrid", "deluge", "direct download", "dood.so",
+    "dood.watch", "doodstream", "dvdrip", "DHT", "easybytez",
+    "eztvx", "fake release", "fake releases", "filecrypt", "fitgirl", "flixtor",
+    "flixtor.to", "flixhq", "fmovies", "free movies online", "gofile", "gogoanime",
+    "gomovies", "HD cam", "igg-games", "indexer", "indexers", "irc release",
+    "jdownloader", "katcr", "katcr.co", "keygen", "keygens", "kickass.to",
+    "kickasstorrents", "leech", "leeching", "lookmovie", "mediafire", "mega link",
+    "monova", "moviesjoy", "myflixer", "no ads streaming", "no sign up streaming", "nzb",
+    "nzb indexer", "openload", "p2p", "peerflix", "popcorn time", "primewire",
+    "projectfreetv", "prostylex", "putlocker", "qbittorrent", "r/CrackWatch", "r/GenP",
+    "r/jellyfinshare", "r/jellyfinshared", "r/megalinks", "r/megathread", "r/piracy", "rarbg",
+    "rarbg.to", "rapidgator", "real debrid", "real-debrid", "repack", "scene group",
+    "scene release", "seed", "seeder", "seedbox", "seeds", "skidrow",
+    "soap2day", "solarmovie", "soundseek", "streamango", "streamcloud", "streaming site",
+    "streaming sites", "streamsb", "streamtape", "streamwish", "superbits", "telecine",
+    "telesync", "the pirate bay", "torlock", "torrent", "torrentbytes", "torrentdownloads",
+    "torrentfunk", "torrentgalaxy", "torrenthound", "torrentleech", "torrentproject", "torrents",
+    "torrentsite", "torrentsites", "torrentz", "torrentz2", "tpb", "transmission",
+    "uploadgig", "uptobox", "utorrent", "vidcloud", "vidcloud9", "videobin",
+    "vidlox", "warez", "watchseries", "yesmovies", "yify", "yts.mx",
+    "zippyshare"
   ];
   return piracyKeywords.some((keyword) => lowerText.includes(keyword));
 }
@@ -107,21 +107,33 @@ client.on('messageCreate', async (message) => {
   //console.log(LangDetected.getScores(), isEnglish, cjkRegex.test(message.content), message.content.length);
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
-    
+
   if (!(channelsToSkip && channelsToSkip.includes(message.channelId))) {
 
     const LangDetected = eldr.detect(message.content);
     const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en") || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
     const cjkRegex = /[\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7af]/;
 
-    if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27) && nonEnglishTrolls.includes(message.author.id))) {
+    if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27) )) {
       const translatedJSON = await client.ollamaTranslate(message.content)
-      if (translatedJSON && translatedJSON.translated) {
-        message.reply(`${translatedJSON.text}`);
+      console.log("translatedJSON")
+      console.log(translatedJSON)
+      if (translatedJSON && translatedJSON.wasTranslated) {
+
+        const translation = translatedJSON.translation;
+        const confidence = translatedJSON.confidence;
+        const language = translatedJSON.language;
+        const isAccurate = translatedJSON.isAccurate;
+
+        const reply = `
+Language: ${language} Confidence: ${confidence} ${isAccurate} -> English,
+Translation: "${translation}"
+        `
+        message.reply(`${reply}`);
       }
-    }
-    else if (!isEnglish && !nonEnglishTrolls.includes(message.author.id)) {
-      message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
+      else if (nonEnglishTrolls && nonEnglishTrolls.includes(message.author.id)) {
+        message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
+      }
     }
   }
 
