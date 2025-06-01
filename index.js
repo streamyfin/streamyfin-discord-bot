@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import Streamyfin from './client.js';
-import { GatewayIntentBits, REST, Routes } from 'discord.js';
+import { GatewayIntentBits, REST, Routes, MessageFlags } from 'discord.js';
 import { eldr } from 'eldr';
 import fs from 'fs';
 
@@ -64,7 +64,7 @@ client.on("interactionCreate", async (interaction) => {
     console.error(error);
     await interaction.reply({
       content: 'There was an error while executing this command!',
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   }
 })
