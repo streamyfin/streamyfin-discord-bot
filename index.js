@@ -116,7 +116,7 @@ client.on('messageCreate', async (message) => {
         message.reply(`${translatedJSON.text}`);
       }
     }
-    else if (!isEnglish && nonEnglishTrolls.includes(message.author.id)) {
+    else if (!isEnglish && !nonEnglishTrolls.includes(message.author.id)) {
       message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
     }
   }
