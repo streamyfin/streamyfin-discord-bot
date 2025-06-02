@@ -61,7 +61,7 @@ function hasPiracyKeywords(message) {
   "aria2", "bayfiles", "bd-rip", "bdrip", "bluray rip", "camrip",
   "camrips", "codex", "crackingpatching", "crackle", "cyberlocker", "cyberlockers",
   "ddl", "ddls", "debrid", "deluge", "direct download", "dood.so",
-  "dood.watch", "doodstream" "dvdrip", "DHT", "easybytez",
+  "dood.watch", "doodstream","dvdrip", "DHT", "easybytez",
   "eztvx", "fake release", "fake releases", "filecrypt", "fitgirl", "flixtor",
   "flixtor.to", "flixhq", "fmovies", "free movies online", "gofile", "gogoanime",
   "gomovies", "HD cam", "igg-games", "indexer", "indexers", "irc release",
