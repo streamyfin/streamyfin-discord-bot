@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { SlashCommandBuilder, StringSelectMenuBuilder, MessageFlags } from 'discord.js';
 import axios from 'axios';
 
 export default {
@@ -9,7 +9,7 @@ export default {
 
         const leaderboard = await interaction.client.fetchStats();
         if (!leaderboard || leaderboard.length === 0) {
-            await interaction.reply({ content: "❌ No data available", ephemeral: true });
+            await interaction.reply({ content: "❌ No data available", flags: MessageFlags.Ephemeral });
             return;
         }
         const mapped = leaderboard.map((x, index) => `${index + 1}. ${x.username} - ${x.contributions}`).join("\n");
@@ -91,4 +91,3 @@ export default {
         })
     },
 };
- 

@@ -23,6 +23,8 @@ services:
       - FORUM_CHANNEL_ID=<your_forum_channel_id>
       - PERSPECTIVE_APIKEY=<your_perspective_api_key>
       - OLLAMA_URL=<your_ollama_url>
+      - PEOPLE_TO_TROLL=["id"]
+      - CHANNELS_TO_SKIP=["id"]
     labels:
       - com.centurylinklabs.watchtower.enable=true
     restart: unless-stopped

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { SlashCommandBuilder, StringSelectMenuBuilder, MessageFlags } from 'discord.js';
 import axios from 'axios';
 
 export default {
@@ -20,13 +20,13 @@ export default {
         let repoName = interaction.options.getString("repo");
 
         if (repoName) {
-            if (!issueNumber) return interaction.reply({ content: "Please provide an issue number.", ephemeral: true})
+            if (!issueNumber) return interaction.reply({ content: "Please provide an issue number.", flags: MessageFlags.Ephemeral})
         }
 
         if (!repoName) repoName = interaction.client.repoName
         let repoCheck = await interaction.client.repoCheck(repoName)
         if (!repoCheck.exists) {
-            return interaction.reply({content: `${repoName} does not exist.`, ephemeral: true})
+            return interaction.reply({content: `${repoName} does not exist.`, flags: MessageFlags.Ephemeral})
         }
         if (issueNumber) {
             try {
