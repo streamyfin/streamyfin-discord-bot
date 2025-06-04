@@ -147,9 +147,7 @@ Translation: "${translation}"
       }
     }
   }
-  if (message.mentions.has(client.user) && !message.author.bot) {
-    message.reply("Hi there, I'm Finn! I'm a bot written for streamyfin! To find out what I can do, use `/help`!");
-  }
+  
 });
 const registerCommands = async () => {
   if (client.githubToken) await client.fetchReleases();

@@ -10,7 +10,10 @@ export default {
             .join("\n");
 
         await interaction.reply({
-            content: `Available commands:\n${commandList}`,
+            content: `
+            Hi there! I'm Finn, your friendly Discord bot for all kinds of things related to Streamyfin! Here's a list of all the commands you can use:  
+            \n${commandList}
+            \nI can also help you convert units like km or celsius to miles and fahrenheit, and I can translate your messages into English at any time, if you prefer to explain something in your native language.`,
             flags: MessageFlags.Ephemeral,
         });
     },
