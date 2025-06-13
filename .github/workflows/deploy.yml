@@ -17,7 +17,12 @@ jobs:
         id: changes
         run: |
           git fetch origin main
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          if git rev-parse ${{ github.event.before }} 2>/dev/null; then
+            CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          else
+            # Fallback: diff last two commits if previous SHA is missing
+            CHANGED=$(git diff --name-only HEAD~1 HEAD)
+          fi
           echo "$CHANGED"
           if echo "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js)'; then
             echo "RELEVANT_CHANGES=true" >> $GITHUB_ENV
@@ -51,18 +56,18 @@ jobs:
 
       - name: Set up Docker Buildx
         if: env.RELEVANT_CHANGES == 'true'
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
         if: env.RELEVANT_CHANGES == 'true'
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker images
         if: env.RELEVANT_CHANGES == 'true'
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
