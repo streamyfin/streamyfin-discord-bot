@@ -1,4 +1,4 @@
-name: Deploy to Docker Hub
+name: Release & Deploy
 
 on:
   push:
@@ -6,36 +6,70 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  release-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Check for relevant code changes
+        id: changes
+        run: |
+          git fetch origin main
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+          echo "$CHANGED"
+          if echo "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js)'; then
+            echo "RELEVANT_CHANGES=true" >> $GITHUB_ENV
+          else
+            echo "RELEVANT_CHANGES=false" >> $GITHUB_ENV
+          fi
+
+      - name: Skip workflow if no relevant code changed
+        if: env.RELEVANT_CHANGES == 'false'
+        run: echo "⚠️ No relevant code changes – skipping release and deploy."
+
+      - name: Set up Node.js
+        if: env.RELEVANT_CHANGES == 'true'
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        if: env.RELEVANT_CHANGES == 'true'
+        run: npm ci
+
+      - name: Run semantic-release
+        if: env.RELEVANT_CHANGES == 'true'
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(npx semantic-release | tee /dev/tty | grep -oP "Published release \Kv?[0-9]+\.[0-9]+\.[0-9]+")
+          echo "RELEASE_VERSION=${VERSION#v}" >> $GITHUB_ENV
+          echo "✅ Released version: $VERSION"
+
       - name: Set up Docker Buildx
+        if: env.RELEVANT_CHANGES == 'true'
         uses: docker/setup-buildx-action@v1
 
-      - name: Extract version from package.json
-        id: get_version
-        run: |
-          VERSION=$(jq -r '.version' package.json)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
       - name: Log in to Docker Hub
+        if: env.RELEVANT_CHANGES == 'true'
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker images
+        if: env.RELEVANT_CHANGES == 'true'
         uses: docker/build-push-action@v2
         with:
           context: .
           push: true
           tags: |
-            retardgerman/streamyfin-discord-bot:${{ env.VERSION }}
+            retardgerman/streamyfin-discord-bot:${{ env.RELEASE_VERSION }}
             retardgerman/streamyfin-discord-bot:latest
 
       - name: Verify Docker image
+        if: env.RELEVANT_CHANGES == 'true'
         run: docker images
