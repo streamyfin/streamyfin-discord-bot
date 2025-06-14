@@ -33,3 +33,27 @@ jobs:
       - name: Validate PR commits with commitlint
         if: github.event_name == 'pull_request'
         run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+      - name: Comment on commitlint failure
+        if: failure() && github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ❌ **Commit format invalid**
+
+            One or more commits in this pull request do not follow the [Conventional Commits](https://www.conventionalcommits.org/) format.
+
+            👉 Please rewrite your commits using the correct format like:
+
+            - `feat: add something`
+            - `fix(api): correct validation bug`
+            - `chore: update dependencies`
+
+            You can fix this with:
+
+            ```bash
+            git rebase -i origin/main
+            # then change message(s)
+            git push --force
+            ```
