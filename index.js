@@ -109,7 +109,7 @@ client.on('messageCreate', async (message) => {
 
   if (!(channelsToSkip && channelsToSkip.includes(message.channelId))) {
     const LangDetected = eldr.detect(message.content);
-    const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en") || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
+    const isEnglish = (LangDetected.iso639_1 === "en" && LangDetected.reliability >= 0.7) || (!LangDetected.isReliable() && LangDetected.iso639_1 === "");
     const cjkRegex = /[\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7af]/;
 
     if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27))) {
@@ -128,7 +128,7 @@ Translation: "${translation}"
         `
         message.reply(`${reply}`);
       }
-      else if (nonEnglishTrolls && nonEnglishTrolls.includes(message.author.id)) {
+      else if (nonEnglishTrolls && nonEnglishTrolls.includes(message.author.id) && !isEnglish) {
         const urlRegex = /https?:\/\/[^\s]+/g;
         const messageWithoutUrls = message.content.replace(urlRegex, '').trim();
 
