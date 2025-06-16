@@ -1,5 +1,9 @@
 name: Release & Deploy
 
+permissions:
+  contents: write
+  issues: write
+
 on:
   push:
     branches:
@@ -52,8 +56,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION=$(npx semantic-release | tee /dev/tty | grep -oP "Published release \Kv?[0-9]+\.[0-9]+\.[0-9]+")
+          RELEASE_LOG=$(mktemp)
+          VERSION=$(npx semantic-release | tee "$RELEASE_LOG" | grep -oP "Published release \Kv?[0-9]+\.[0-9]+\.[0-9]+")
           echo "RELEASE_VERSION=${VERSION#v}" >> $GITHUB_ENV
+          cat "$RELEASE_LOG"
           echo "✅ Released version: $VERSION"
 
       - name: Set up Docker Buildx
