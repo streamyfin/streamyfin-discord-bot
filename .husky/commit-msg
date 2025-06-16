@@ -1,1 +1,10 @@
-npx --no -- commitlint --edit $1
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# skip commitlint if [skip ci] is in commit message (semantic-release case)
+if grep -q '\[skip ci\]' "$1"; then
+  echo "🟡 Skipping commitlint for release commit"
+  exit 0
+fi
+
+npx --no -- commitlint --edit "$1"
