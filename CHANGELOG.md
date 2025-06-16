@@ -1,3 +1,19 @@
+# [2.2.0](https://github.com/streamyfin/streamyfin-discord-bot/compare/v2.1.2...v2.2.0) (2025-06-16)
+
+
+### Bug Fixes
+
+* **ci:** fetch full git history to fix commit diff detection in workflow ([e417144](https://github.com/streamyfin/streamyfin-discord-bot/commit/e417144ddbea622f695e4bc038e3e2711dcfd854))
+* **commitlint:** rename config file to .cjs to fix ESM loading issue in CI ([bd58522](https://github.com/streamyfin/streamyfin-discord-bot/commit/bd58522b7aadcd86483329b1e52da84fb6fb3314))
+* **lang:** improve language detection reliability and trolling conditions ([9cf6a6a](https://github.com/streamyfin/streamyfin-discord-bot/commit/9cf6a6a8b85c3cdc7c8c295bf91d5605f9b5b776))
+* trigger release for workflow changes ([c63b6f1](https://github.com/streamyfin/streamyfin-discord-bot/commit/c63b6f12b9f1919516c7b5d914d04aca13ba04b6))
+
+
+### Features
+
+* **ci:** add semantic-release with conditional Docker deploy ([08a3e87](https://github.com/streamyfin/streamyfin-discord-bot/commit/08a3e87ae9668e835a1cfe89e710c6bbb1e407df))
+* **husky:** add semantic-release skip condition ([e899f27](https://github.com/streamyfin/streamyfin-discord-bot/commit/e899f2768b61cd022cd07745f1c3ab4e2ccfcaef))
+
 ## [2.1.2](https://github.com/streamyfin/streamyfin-discord-bot/compare/v2.1.1...v2.1.2) (2025-06-12)
 
 
@@ -134,6 +150,3 @@
 * removed unnecessary code in closeissue.js ([ba9737c](https://github.com/streamyfin/streamyfin-discord-bot/commit/ba9737ccf35e905b588fed4feb6652c58aeef78d))
 * Update featurerequest command to include description option ([3b309e1](https://github.com/streamyfin/streamyfin-discord-bot/commit/3b309e1a3a7447d35567b05635e5179aa5a81ade))
 * Update featurerequest command to include description option ([fd2ac35](https://github.com/streamyfin/streamyfin-discord-bot/commit/fd2ac357b2d5a8b1272ba34a7dad7e79f18965f7))
-
-
-
