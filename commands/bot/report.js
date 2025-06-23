@@ -1,18 +1,54 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 
-module.exports = {
+export default {
   data: new SlashCommandBuilder()
     .setName('report')
     .setDescription('Report a message to the moderators')
+    .addStringOption(option =>
+      option.setName('message')
+        .setDescription('Paste the message link or message ID you want to report')
+        .setRequired(true)
+    )
     .addStringOption(option =>
       option.setName('reason')
         .setDescription('Reason for reporting this message')
         .setRequired(false)
     ),
 
-  async execute(interaction) {
+  async run(interaction) {
     const reason = interaction.options.getString('reason') || '*No reason provided*';
-    const referencedMessage = interaction.options.getMessage('message', false) || interaction.message?.reference;
+    const messageInput = interaction.options.getString('message');
+
+    // Try to extract messageId and channelId from link or ID
+    let messageId, channelId;
+    const linkMatch = messageInput.match(/channels\/\d+\/(\d+)\/(\d+)/);
+    if (linkMatch) {
+      channelId = linkMatch[1];
+      messageId = linkMatch[2];
+    } else if (/^\d+$/.test(messageInput)) {
+      // Only messageId provided, try to use current channel
+      messageId = messageInput;
+      channelId = interaction.channel.id;
+    }
+
+    let reportedMessage = null;
+    if (channelId && messageId) {
+      try {
+        const channel = await interaction.guild.channels.fetch(channelId);
+        if (channel && channel.isTextBased()) {
+          reportedMessage = await channel.messages.fetch(messageId);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    if (!reportedMessage) {
+      return interaction.reply({
+        content: 'Could not find the message. Please provide a valid message link or ID.',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
 
     const logChannelId = process.env.MOD_LOG_CHANNEL_ID;
     const logChannel = interaction.guild.channels.cache.get(logChannelId);
@@ -23,16 +59,6 @@ module.exports = {
         flags: MessageFlags.Ephemeral,
       });
     }
-
-    
-    if (!interaction.channel || !interaction.options || !interaction.options.resolved?.messages?.first()) {
-      return interaction.reply({
-        content: 'Please reply to the message you want to report using this command.',
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    const reportedMessage = interaction.options.resolved.messages.first();
 
     const embed = new EmbedBuilder()
       .setTitle('🚨 Message Reported')
@@ -53,7 +79,8 @@ module.exports = {
     await logChannel.send({ embeds: [embed] });
 
     await interaction.reply({
-      content: '✅ Your report has been sent to the moderators.',flags: MessageFlags.Ephemeral,
+      content: '✅ Your report has been sent to the moderators.',
+      flags: MessageFlags.Ephemeral,
     });
   },
 };
