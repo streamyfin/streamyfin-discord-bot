@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import redisClient from '../../redisClient.js';
 
 export default {
   data: new SlashCommandBuilder()
@@ -19,14 +20,12 @@ export default {
     const reason = interaction.options.getString('reason') || '*No reason provided*';
     const messageInput = interaction.options.getString('message');
 
-    // Try to extract messageId and channelId from link or ID
     let messageId, channelId;
     const linkMatch = messageInput.match(/channels\/\d+\/(\d+)\/(\d+)/);
     if (linkMatch) {
       channelId = linkMatch[1];
       messageId = linkMatch[2];
     } else if (/^\d+$/.test(messageInput)) {
-      // Only messageId provided, try to use current channel
       messageId = messageInput;
       channelId = interaction.channel.id;
     }
@@ -38,9 +37,7 @@ export default {
         if (channel && channel.isTextBased()) {
           reportedMessage = await channel.messages.fetch(messageId);
         }
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
 
     if (!reportedMessage) {
@@ -49,6 +46,26 @@ export default {
         flags: MessageFlags.Ephemeral,
       });
     }
+
+    const reportData = {
+      messageId: reportedMessage.id,
+      authorId: reportedMessage.author.id,
+      authorTag: reportedMessage.author.tag,
+      content: reportedMessage.content,
+      channelId: reportedMessage.channel.id,
+      guildId: interaction.guild.id,
+      reporterId: interaction.user.id,
+      reporterTag: interaction.user.tag,
+      reason,
+      createdTimestamp: reportedMessage.createdTimestamp,
+      reportedAt: Date.now(),
+    };
+    
+    await redisClient.set(
+      `reported_message_${reportedMessage.id}`, 
+      JSON.stringify(reportData),
+      { EX: 60 * 60 * 24 * 90 }
+    );
 
     const logChannelId = process.env.MOD_LOG_CHANNEL_ID;
     const logChannel = interaction.guild.channels.cache.get(logChannelId);
@@ -68,6 +85,12 @@ export default {
         { name: 'Channel', value: `<#${reportedMessage.channel.id}>`, inline: true },
         { name: 'Reason', value: reason },
         { name: 'Message Content', value: reportedMessage.content || '*[No content]*' },
+        { name: 'Message ID', value: reportedMessage.id, inline: true },
+        { 
+          name: 'Original Timestamp', 
+          value: `<t:${Math.floor(reportedMessage.createdTimestamp / 1000)}:F>`, 
+          inline: true 
+        },
         {
           name: 'Link',
           value: `https://discord.com/channels/${interaction.guild.id}/${reportedMessage.channel.id}/${reportedMessage.id}`
