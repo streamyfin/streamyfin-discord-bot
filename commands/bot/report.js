@@ -98,7 +98,7 @@ export default {
     
     const modal = new ModalBuilder()
       .setCustomId(`report_modal_${interaction.targetId}`)
-      .setTitle('Nachricht melden');
+      .setTitle('Report message');
 
     const reasonInput = new TextInputBuilder()
       .setCustomId('report_reason')
