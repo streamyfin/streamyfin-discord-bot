@@ -102,10 +102,10 @@ export default {
 
     const reasonInput = new TextInputBuilder()
       .setCustomId('report_reason')
-      .setLabel('Grund für die Meldung')
+      .setLabel('Reason for the report ')
       .setStyle(TextInputStyle.Paragraph)
       .setRequired(true)
-      .setPlaceholder('Beschreibe den Grund für deine Meldung...');
+      .setPlaceholder('please describe the reason for your report...');
 
     const actionRow = new ActionRowBuilder().addComponents(reasonInput);
     modal.addComponents(actionRow);
