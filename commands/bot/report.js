@@ -83,7 +83,7 @@ export default {
 
         await interaction.reply({
           content: '✅ Your report has been sent to the moderators.',
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral ,
         });
       } catch (error) {
         console.error('Error reporting message:', error);
