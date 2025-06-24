@@ -32,7 +32,7 @@ export default {
 
 		await interaction.reply({
 			content: `✅ Forum thread created, please fill out the issue report: [${thread.name}](https://discord.com/channels/${interaction.guild.id}/${forumChannelId}/${thread.id})`,
-			ephemeral: false,
+			flags: MessageFlags.Ephemeral
 		});
 
 		// Define the questions to ask the user

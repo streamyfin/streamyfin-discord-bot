@@ -2,9 +2,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import Streamyfin from './client.js';
-import { GatewayIntentBits, REST, Routes, MessageFlags } from 'discord.js';
+import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'discord.js';
 import { eldr } from 'eldr';
 import fs from 'fs';
+import redisClient from './redisClient.js';
 
 const tempCommands = []
 function importNonEnglishTrolls() {
@@ -52,23 +53,73 @@ fs.readdirSync("./commands").forEach(async dir => {
 client.on("ready", () => {
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
 })
+
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (interaction.isCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
 
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
+    try {
+      await command.run(interaction);
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: 'There was an error while executing this command!',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+  } else if (interaction.isButton()) {
+    const { customId, user, guild } = interaction;
 
-  try {
-    await command.run(interaction);
-  } catch (error) {
-    console.error(error);
-    await interaction.reply({
-      content: 'There was an error while executing this command!',
-      flags: MessageFlags.Ephemeral,
-    });
+    if (customId.startsWith('resolve_report_')) {
+      const messageId = customId.replace('resolve_report_', '');
+
+      try {
+        const member = await guild.members.fetch(user.id);
+        if (!member.permissions.has('ManageMessages')) {
+          return interaction.reply({ 
+            content: 'You do not have permission to resolve this report.',
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+        
+        await redisClient.del(`reported_message_${messageId}`);
+
+        const originalEmbed = interaction.message.embeds[0];
+        const updatedEmbed = EmbedBuilder.from(originalEmbed)
+          .setFooter({ text: `Report resolved by ${user.tag}` })
+          .setColor(0x00ff00);
+
+        await interaction.update({ 
+          embeds: [updatedEmbed],
+          components: [],
+        });
+      } catch (error) {
+        console.error(error);
+        await interaction.reply({
+          content: 'There was an error while resolving this report!',
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    }
+  } 
+  else if (interaction.isModalSubmit && interaction.isModalSubmit()) {
+    if (interaction.customId.startsWith('report_modal_')) {
+      const command = client.commands.get('Report Message');
+      if (command) {
+        try {
+          await command.run(interaction);
+        } catch (error) {
+          console.error(error);
+          await interaction.reply({
+            content: 'There was an error while submitting your report!',
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+      }
+    }
   }
-})
-
+});
 
 function hasPiracyKeywords(message) {
   const lowerText = message.trim().toLowerCase();
