@@ -125,31 +125,31 @@ function hasPiracyKeywords(message) {
   const lowerText = message.trim().toLowerCase();
   const piracyKeywords = [
     "1fichier", "123movies", "1337x", "all-debrid", "alldebrid", "anonfiles",
-    "aria2", "bayfiles", "bd-rip", "bdrip", "bluray rip", "camrip",
-    "camrips", "codex", "crackingpatching", "crackle", "cyberlocker", "cyberlockers",
-    "ddl", "ddls", "debrid", "deluge", "direct download", "dood.so",
-    "dood.watch", "doodstream", "dvdrip", "DHT", "easybytez",
-    "eztvx", "fake release", "fake releases", "filecrypt", "fitgirl", "flixtor",
-    "flixtor.to", "flixhq", "fmovies", "free movies online", "gofile", "gogoanime",
-    "gomovies", "HD cam", "igg-games", "indexer", "indexers", "irc release",
-    "jdownloader", "katcr", "katcr.co", "keygen", "keygens", "kickass.to",
-    "kickasstorrents", "leech", "leeching", "lookmovie", "mediafire", "mega link",
-    "monova", "moviesjoy", "myflixer", "no ads streaming", "no sign up streaming", "nzb",
-    "nzb indexer", "openload", "p2p", "peerflix", "popcorn time", "primewire",
-    "projectfreetv", "prostylex", "putlocker", "qbittorrent", "r/CrackWatch", "r/GenP",
-    "r/jellyfinshare", "r/jellyfinshared", "r/megalinks", "r/megathread", "r/piracy", "rarbg",
-    "rarbg.to", "rapidgator", "real debrid", "real-debrid", "repack", "scene group",
-    "scene release", "seed", "seeder", "seedbox", "seeds", "skidrow",
-    "soap2day", "solarmovie", "soundseek", "streamango", "streamcloud", "streaming site",
-    "streaming sites", "streamsb", "streamtape", "streamwish", "superbits", "telecine",
-    "telesync", "the pirate bay", "torlock", "torrent", "torrentbytes", "torrentdownloads",
-    "torrentfunk", "torrentgalaxy", "torrenthound", "torrentleech", "torrentproject", "torrents",
-    "torrentsite", "torrentsites", "torrentz", "torrentz2", "tpb", "transmission",
-    "uploadgig", "uptobox", "utorrent", "vidcloud", "vidcloud9", "videobin",
-    "vidlox", "warez", "watchseries", "yesmovies", "yify", "yts.mx",
-    "zippyshare"
+    "aria2", "bayfiles", "bdrip", "bluray rip", "camrip", "codex", "crack", "cracked",
+    "crackingpatching", "crackle", "cyberlocker", "ddl", "deluge", "direct download",
+    "dood.so", "dood.watch", "doodstream", "dvdrip", "easybytez", "eztvx", "fake release",
+    "filecrypt", "fitgirl", "flixtor", "flixhq", "fmovies", "free movies online", "gofile",
+    "gogoanime", "gomovies", "hd cam", "igg-games", "indexer", "irc release",
+    "jdownloader", "katcr", "keygen", "kickass.to", "kickasstorrents", "leech",
+    "lookmovie", "mediafire", "mega link", "monova", "moviesjoy", "myflixer",
+    "no ads streaming", "no sign up streaming", "nzb", "nzb indexer", "openload",
+    "p2p", "peerflix", "popcorn time", "primewire", "projectfreetv", "prostylex",
+    "putlocker", "qbittorrent", "r/CrackWatch", "r/GenP", "r/jellyfinshare", "r/jellyfinshared",
+    "r/megalinks", "r/megathread", "r/piracy", "rarbg", "rapidgator", "real-debrid",
+    "repack", "scene group", "scene release", "seed", "seedbox", "skidrow", "soap2day",
+    "solarmovie", "soundseek", "streamango", "streamcloud", "streaming site",
+    "streamsb", "streamtape", "streamwish", "superbits", "telecine", "telesync",
+    "the pirate bay", "torlock", "torrent", "torrentdownloads", "torrentfunk", "torrentgalaxy",
+    "torrenthound", "torrentleech", "torrentproject", "torrentz", "torrentz2", "tpb",
+    "transmission", "uploadgig", "uptobox", "utorrent", "vidcloud", "vidcloud9", "videobin",
+    "vidlox", "warez", "watchseries", "yesmovies", "yify", "yts.mx", "zippyshare"
   ];
-  return piracyKeywords.some((keyword) => lowerText.includes(keyword));
+
+  return piracyKeywords.some((keyword) => {
+    const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\b${escapedKeyword}\\b`, 'i'); 
+    return pattern.test(lowerText);
+  });
 }
 
 client.on('messageCreate', async (message) => {
