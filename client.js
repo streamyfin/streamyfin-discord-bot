@@ -123,13 +123,10 @@ Always follow the format and rules above without exception.
 
       let translated = await this.ollamaAPI.generate({
         model: "aya-expanse",
-        //model: "zongwei/gemma3-translator:4b",
         prompt,
         stream: false,
         keep_alive: "2h"
       });
-      console.log("translated:")
-      console.log(translated)
       if (translated.done) {
         return JSON.parse(translated.response);
       } else {

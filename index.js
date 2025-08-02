@@ -77,12 +77,12 @@ client.on("interactionCreate", async (interaction) => {
       try {
         const member = await guild.members.fetch(user.id);
         if (!member.permissions.has('ManageMessages')) {
-          return interaction.reply({ 
+          return interaction.reply({
             content: 'You do not have permission to resolve this report.',
             flags: MessageFlags.Ephemeral,
           });
         }
-        
+
         await redisClient.del(`reported_message_${messageId}`);
 
         const originalEmbed = interaction.message.embeds[0];
@@ -90,7 +90,7 @@ client.on("interactionCreate", async (interaction) => {
           .setFooter({ text: `Report resolved by ${user.tag}` })
           .setColor(0x00ff00);
 
-        await interaction.update({ 
+        await interaction.update({
           embeds: [updatedEmbed],
           components: [],
         });
@@ -102,7 +102,7 @@ client.on("interactionCreate", async (interaction) => {
         });
       }
     }
-  } 
+  }
   else if (interaction.isModalSubmit && interaction.isModalSubmit()) {
     if (interaction.customId.startsWith('report_modal_')) {
       const command = client.commands.get('Report Message');
@@ -120,37 +120,6 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 });
-
-function hasPiracyKeywords(message) {
-  const lowerText = message.trim().toLowerCase();
-  const piracyKeywords = [
-    "1fichier", "123movies", "1337x", "all-debrid", "alldebrid", "anonfiles",
-    "aria2", "bayfiles", "bdrip", "bluray rip", "camrip", "codex", "crack", "cracked",
-    "crackingpatching", "crackle", "cyberlocker", "ddl", "deluge", "direct download",
-    "dood.so", "dood.watch", "doodstream", "dvdrip", "easybytez", "eztvx", "fake release",
-    "filecrypt", "fitgirl", "flixtor", "flixhq", "fmovies", "free movies online", "gofile",
-    "gogoanime", "gomovies", "hd cam", "igg-games", "indexer", "irc release",
-    "jdownloader", "katcr", "keygen", "kickass.to", "kickasstorrents", "leech",
-    "lookmovie", "mediafire", "mega link", "monova", "moviesjoy", "myflixer",
-    "no ads streaming", "no sign up streaming", "nzb", "nzb indexer", "openload",
-    "p2p", "peerflix", "popcorn time", "primewire", "projectfreetv", "prostylex",
-    "putlocker", "qbittorrent", "r/CrackWatch", "r/GenP", "r/jellyfinshare", "r/jellyfinshared",
-    "r/megalinks", "r/megathread", "r/piracy", "rarbg", "rapidgator", "real-debrid",
-    "repack", "scene group", "scene release", "seed", "seedbox", "skidrow", "soap2day",
-    "solarmovie", "soundseek", "streamango", "streamcloud", "streaming site",
-    "streamsb", "streamtape", "streamwish", "superbits", "telecine", "telesync",
-    "the pirate bay", "torlock", "torrent", "torrentdownloads", "torrentfunk", "torrentgalaxy",
-    "torrenthound", "torrentleech", "torrentproject", "torrentz", "torrentz2", "tpb",
-    "transmission", "uploadgig", "uptobox", "utorrent", "vidcloud", "vidcloud9", "videobin",
-    "vidlox", "warez", "watchseries", "yesmovies", "yify", "yts.mx", "zippyshare"
-  ];
-
-  return piracyKeywords.some((keyword) => {
-    const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const pattern = new RegExp(`\\b${escapedKeyword}\\b`, 'i'); 
-    return pattern.test(lowerText);
-  });
-}
 
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
@@ -185,17 +154,6 @@ Translation: "${translation}"
 
         if (messageWithoutUrls.length > 0) {
           message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
-        }
-      }
-    }
-
-    const hasPiracy = hasPiracyKeywords(message.content);
-    if (hasPiracy) {
-      const isToxic = await client.checkMessage(message.content);
-      if (isToxic) {
-        const command = client.commands.get("piracy");
-        if (command) {
-          command.run(message);
         }
       }
     }
