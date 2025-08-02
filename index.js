@@ -2,9 +2,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import Streamyfin from './client.js';
-import { GatewayIntentBits, REST, Routes, MessageFlags } from 'discord.js';
+import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'discord.js';
 import { eldr } from 'eldr';
 import fs from 'fs';
+import redisClient from './redisClient.js';
 
 const tempCommands = []
 function importNonEnglishTrolls() {
@@ -52,53 +53,103 @@ fs.readdirSync("./commands").forEach(async dir => {
 client.on("ready", () => {
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
 })
+
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (interaction.isCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
 
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
+    try {
+      await command.run(interaction);
+    } catch (error) {
+      console.error(error);
+      await interaction.reply({
+        content: 'There was an error while executing this command!',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+  } else if (interaction.isButton()) {
+    const { customId, user, guild } = interaction;
 
-  try {
-    await command.run(interaction);
-  } catch (error) {
-    console.error(error);
-    await interaction.reply({
-      content: 'There was an error while executing this command!',
-      flags: MessageFlags.Ephemeral,
-    });
+    if (customId.startsWith('resolve_report_')) {
+      const messageId = customId.replace('resolve_report_', '');
+
+      try {
+        const member = await guild.members.fetch(user.id);
+        if (!member.permissions.has('ManageMessages')) {
+          return interaction.reply({ 
+            content: 'You do not have permission to resolve this report.',
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+        
+        await redisClient.del(`reported_message_${messageId}`);
+
+        const originalEmbed = interaction.message.embeds[0];
+        const updatedEmbed = EmbedBuilder.from(originalEmbed)
+          .setFooter({ text: `Report resolved by ${user.tag}` })
+          .setColor(0x00ff00);
+
+        await interaction.update({ 
+          embeds: [updatedEmbed],
+          components: [],
+        });
+      } catch (error) {
+        console.error(error);
+        await interaction.reply({
+          content: 'There was an error while resolving this report!',
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    }
+  } 
+  else if (interaction.isModalSubmit && interaction.isModalSubmit()) {
+    if (interaction.customId.startsWith('report_modal_')) {
+      const command = client.commands.get('Report Message');
+      if (command) {
+        try {
+          await command.run(interaction);
+        } catch (error) {
+          console.error(error);
+          await interaction.reply({
+            content: 'There was an error while submitting your report!',
+            flags: MessageFlags.Ephemeral,
+          });
+        }
+      }
+    }
   }
-})
-
+});
 
 function hasPiracyKeywords(message) {
   const lowerText = message.trim().toLowerCase();
   const piracyKeywords = [
     "1fichier", "123movies", "1337x", "all-debrid", "alldebrid", "anonfiles",
-    "aria2", "bayfiles", "bd-rip", "bdrip", "bluray rip", "camrip",
-    "camrips", "codex", "crackingpatching", "crackle", "cyberlocker", "cyberlockers",
-    "ddl", "ddls", "debrid", "deluge", "direct download", "dood.so",
-    "dood.watch", "doodstream", "dvdrip", "DHT", "easybytez",
-    "eztvx", "fake release", "fake releases", "filecrypt", "fitgirl", "flixtor",
-    "flixtor.to", "flixhq", "fmovies", "free movies online", "gofile", "gogoanime",
-    "gomovies", "HD cam", "igg-games", "indexer", "indexers", "irc release",
-    "jdownloader", "katcr", "katcr.co", "keygen", "keygens", "kickass.to",
-    "kickasstorrents", "leech", "leeching", "lookmovie", "mediafire", "mega link",
-    "monova", "moviesjoy", "myflixer", "no ads streaming", "no sign up streaming", "nzb",
-    "nzb indexer", "openload", "p2p", "peerflix", "popcorn time", "primewire",
-    "projectfreetv", "prostylex", "putlocker", "qbittorrent", "r/CrackWatch", "r/GenP",
-    "r/jellyfinshare", "r/jellyfinshared", "r/megalinks", "r/megathread", "r/piracy", "rarbg",
-    "rarbg.to", "rapidgator", "real debrid", "real-debrid", "repack", "scene group",
-    "scene release", "seed", "seeder", "seedbox", "seeds", "skidrow",
-    "soap2day", "solarmovie", "soundseek", "streamango", "streamcloud", "streaming site",
-    "streaming sites", "streamsb", "streamtape", "streamwish", "superbits", "telecine",
-    "telesync", "the pirate bay", "torlock", "torrent", "torrentbytes", "torrentdownloads",
-    "torrentfunk", "torrentgalaxy", "torrenthound", "torrentleech", "torrentproject", "torrents",
-    "torrentsite", "torrentsites", "torrentz", "torrentz2", "tpb", "transmission",
-    "uploadgig", "uptobox", "utorrent", "vidcloud", "vidcloud9", "videobin",
-    "vidlox", "warez", "watchseries", "yesmovies", "yify", "yts.mx",
-    "zippyshare"
+    "aria2", "bayfiles", "bdrip", "bluray rip", "camrip", "codex", "crack", "cracked",
+    "crackingpatching", "crackle", "cyberlocker", "ddl", "deluge", "direct download",
+    "dood.so", "dood.watch", "doodstream", "dvdrip", "easybytez", "eztvx", "fake release",
+    "filecrypt", "fitgirl", "flixtor", "flixhq", "fmovies", "free movies online", "gofile",
+    "gogoanime", "gomovies", "hd cam", "igg-games", "indexer", "irc release",
+    "jdownloader", "katcr", "keygen", "kickass.to", "kickasstorrents", "leech",
+    "lookmovie", "mediafire", "mega link", "monova", "moviesjoy", "myflixer",
+    "no ads streaming", "no sign up streaming", "nzb", "nzb indexer", "openload",
+    "p2p", "peerflix", "popcorn time", "primewire", "projectfreetv", "prostylex",
+    "putlocker", "qbittorrent", "r/CrackWatch", "r/GenP", "r/jellyfinshare", "r/jellyfinshared",
+    "r/megalinks", "r/megathread", "r/piracy", "rarbg", "rapidgator", "real-debrid",
+    "repack", "scene group", "scene release", "seed", "seedbox", "skidrow", "soap2day",
+    "solarmovie", "soundseek", "streamango", "streamcloud", "streaming site",
+    "streamsb", "streamtape", "streamwish", "superbits", "telecine", "telesync",
+    "the pirate bay", "torlock", "torrent", "torrentdownloads", "torrentfunk", "torrentgalaxy",
+    "torrenthound", "torrentleech", "torrentproject", "torrentz", "torrentz2", "tpb",
+    "transmission", "uploadgig", "uptobox", "utorrent", "vidcloud", "vidcloud9", "videobin",
+    "vidlox", "warez", "watchseries", "yesmovies", "yify", "yts.mx", "zippyshare"
   ];
-  return piracyKeywords.some((keyword) => lowerText.includes(keyword));
+
+  return piracyKeywords.some((keyword) => {
+    const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`\\b${escapedKeyword}\\b`, 'i'); 
+    return pattern.test(lowerText);
+  });
 }
 
 client.on('messageCreate', async (message) => {
