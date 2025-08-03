@@ -50,15 +50,7 @@ jobs:
         if: env.RELEVANT_CHANGES == 'true'
         run: npm ci
 
-      - name: Run semantic-release
-        if: env.RELEVANT_CHANGES == 'true'
-        id: semantic
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION=$(npx semantic-release | tee /dev/tty | grep -oP "Published release \Kv?[0-9]+\.[0-9]+\.[0-9]+")
-          echo "RELEASE_VERSION=${VERSION#v}" >> $GITHUB_ENV
-          echo "✅ Released version: $VERSION"
+      # Semantic-release Schritt entfernt!
 
       - name: Set up Docker Buildx
         if: env.RELEVANT_CHANGES == 'true'
@@ -78,7 +70,6 @@ jobs:
           context: .
           push: true
           tags: |
-            retardgerman/streamyfin-discord-bot:${{ env.RELEASE_VERSION }}
             retardgerman/streamyfin-discord-bot:latest
 
       - name: Verify Docker image
