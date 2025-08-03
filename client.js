@@ -13,6 +13,8 @@ export default class Streamyfin extends Client {
     this.repoName = process.env.REPO_NAME;
     this.githubToken = process.env.GITHUB_TOKEN;
     this.ollamaAPI = new Ollama({ host: process.env.OLLAMA_URL })
+    this.userAIRateLimit = new Map();
+
   }
   convertUnits(text) {
     const unitConversionRegex = /(-?\d+(?:\.\d+)?)\s?(°?[FC]|celsius|fahrenheit|km|kilometers?|mi\b|miles?|kg|kilograms?|lbs?|pounds?|g|grams?|m\b|meters?|ft|feet|in|inches?)\b/gi;
@@ -213,5 +215,45 @@ Always follow the format and rules above without exception.
     }
   }
 
+  async handleSupport(message) {
+    const userID = message.author.id;
+    const now = Date.now();
+    const ratelimit = this.userAIRateLimit;
 
-};
+    if (ratelimit.has(userID) && now - ratelimit.get(userID) < 1000) return;
+    ratelimit.set(userID, now);
+
+    const query = message.content.trim();
+
+    if (!query || query.length < 5) {
+      await message.reply("Please provide a question or query for support.");
+      return;
+    }
+
+    const typingInterval = setInterval(() => {
+      message.channel.sendTyping().catch(() => clearInterval(typingInterval));
+    }, 5000);
+
+    try {
+      await message.channel.sendTyping();
+
+      const request = await axios.post(
+        `${process.env.AI_SUPPRT_URL}/query`,
+        { user_id: userID, query },
+        {
+          headers: { 'X-API-Key': process.env.AI_APIKEY },
+        }
+      );
+
+      if (request.data && request.data.response && request.data.response.length > 0) {
+        await message.reply(request.data.response);
+      } else {
+        await message.reply("Sorry, I couldn't find an answer to your question.");
+      }
+    } catch (error) {
+      console.error("Error in AI Support:", error.message);
+    } finally {
+      clearInterval(typingInterval);
+    }
+  }
+}

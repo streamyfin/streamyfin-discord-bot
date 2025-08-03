@@ -123,6 +123,7 @@ client.on("interactionCreate", async (interaction) => {
 
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
+  if (message.channelId == process.env.AI_SUPORTCHANNEL_ID) client.handleSupport(message);
 
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
