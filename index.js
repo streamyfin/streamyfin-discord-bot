@@ -6,8 +6,10 @@ import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'dis
 import { eldr } from 'eldr';
 import fs from 'fs';
 import redisClient from './redisClient.js';
+import startRSS from './rss.js'
 
 const tempCommands = []
+
 function importNonEnglishTrolls() {
   try {
     return JSON.parse(process.env.PEOPLE_TO_TROLL).map(String);
@@ -52,6 +54,7 @@ fs.readdirSync("./commands").forEach(async dir => {
 
 client.on("ready", () => {
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
+     startRSS(client);
 })
 
 client.on("interactionCreate", async (interaction) => {

@@ -18,7 +18,8 @@
     "dotenv": "^16.4.7",
     "eldr": "github:bkw/eldr",
     "ollama": "^0.5.15",
-    "redis": "^5.1.0"
+    "redis": "^5.1.0",
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
