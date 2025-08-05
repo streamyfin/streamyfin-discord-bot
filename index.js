@@ -148,8 +148,6 @@ client.on('messageCreate', async (message) => {
 
     if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27))) {
       const translatedJSON = await client.ollamaTranslate(message.content)
-      console.log("translatedJSON")
-      console.log(translatedJSON)
       if (translatedJSON && translatedJSON.wasTranslated) {
         const translation = translatedJSON.translation;
         const confidence = translatedJSON.confidence;

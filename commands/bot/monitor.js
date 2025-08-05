@@ -2,6 +2,7 @@ import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import redisClient from '../../redisClient.js';
 
 const serverRoles = ["Developer", "Administrator"];
+const isValidUrl = (url) => /^https?:\/\/\S+$/i.test(url);
 
 const buildMonitorCommand = () =>
     new SlashCommandBuilder()
@@ -44,10 +45,6 @@ const buildMonitorCommand = () =>
                         .setDescription('URL of the source to edit')
                         .setRequired(true))
                 .addStringOption(option =>
-                    option.setName('new_url')
-                        .setDescription('New URL of the source')
-                        .setRequired(false))
-                .addStringOption(option =>
                     option.setName('new_channel')
                         .setDescription('New channel ID to send updates')
                         .setRequired(false))
@@ -62,13 +59,10 @@ const hasPermission = (member) => {
     return roles.some(role => serverRoles.includes(role));
 };
 
-const replyEphemeral = (interaction, content) => interaction.reply({ content, flags: MessageFlags.Ephemeral });
-const isValidUrl = (url) => /^https?:\/\/\S+$/i.test(url);
-
 export default {
     data: buildMonitorCommand(),
     async run(interaction) {
-        if (!hasPermission(interaction.member)) return replyEphemeral(interaction, "You do not have permission to use this command.");
+        if (!hasPermission(interaction.member)) return interaction.reply("You do not have permission to use this command.");
 
         const subcommand = interaction.options.getSubcommand();
         const channelId = interaction.channelId;
@@ -81,10 +75,10 @@ export default {
                 const url = interaction.options.getString('url');
                 const interval = interaction.options.getInteger('interval') || 5;
                 const key = `monitor:${guildId}:${url}`;
-                if (!['reddit', 'rss'].includes(type)) return replyEphemeral(interaction, "Invalid source type.");
-                if (!isValidUrl(url)) return replyEphemeral(interaction, "Please provide a valid URL.");
-                if (interval < 1 || interval > 1440) return replyEphemeral(interaction, "Interval must be between 1 and 1440 minutes.");
-                if (await redisClient.exists(key)) return replyEphemeral(interaction, `This source is already being monitored.`);
+                if (!['reddit', 'rss'].includes(type)) return interaction.reply("Invalid source type.");
+                if (!isValidUrl(url)) return interaction.reply("Please provide a valid URL.");
+                if (interval < 1 || interval > 1440) return interaction.reply("Interval must be between 1 and 1440 minutes.");
+                if (await redisClient.exists(key)) return interaction.reply(`This source is already being monitored.`);
 
                 await redisClient.hSet(key, {
                     type,
@@ -96,34 +90,28 @@ export default {
                     createdAt: Date.now()
                 });
 
-                return replyEphemeral(
-                    interaction,
-                    `✅ Now monitoring ${type.toUpperCase()} source: ${url} (every ${interval}m)`
-                );
+                return interaction.reply(`✅ Now monitoring ${type.toUpperCase()} source: ${url} (every ${interval}m)`);
             }
 
             if (subcommand === 'remove') {
                 const url = interaction.options.getString('url');
-                if (!isValidUrl(url)) return replyEphemeral(interaction, "Please provide a valid URL.");
+                if (!isValidUrl(url)) return interaction.reply("Please provide a valid URL.");
                 const key = `monitor:${guildId}:${url}`;
                 const deleted = await redisClient.del(key);
 
-                return replyEphemeral(
-                    interaction,
-                    deleted ? `Monitoring for ${url} removed.` : `No such monitored source found.`
-                );
+                return interaction.reply(deleted ? `Monitoring for ${url} removed.` : `No such monitored source found.`);
             }
 
             if (subcommand === 'list') {
                 const keys = await redisClient.keys(`monitor:${guildId}:*`);
-                if (!keys.length) return replyEphemeral(interaction, `No sources are currently being monitored in this server.`);
+                if (!keys.length) return interaction.reply(`No sources are currently being monitored in this server.`);
 
                 const hashKeys = [];
                 for (const key of keys) {
                     const type = await redisClient.type(key);
                     if (type === 'hash') hashKeys.push(key);
                 }
-                if (!hashKeys.length) return replyEphemeral(interaction, `No sources are currently being monitored in this server.`);
+                if (!hashKeys.length) return interaction.reply(`No sources are currently being monitored in this server.`);
 
                 const monitors = await Promise.all(hashKeys.map(key => redisClient.hGetAll(key)));
                 const formatted = monitors.map(m =>
@@ -139,11 +127,30 @@ export default {
                 });
             }
             if (subcommand === 'edit') {
+                const url = interaction.options.getString('url');
+                if (!isValidUrl(url)) return interaction.reply("Please provide a valid URL.");
+                const key = `monitor:${guildId}:${url}`;
+                if (!(await redisClient.exists(key))) return interaction.reply(`No monitored source found.`);
+
+                const newChannel = interaction.options.getString('new_channel');
+                const newInterval = interaction.options.getInteger('interval');
+
+                if (!newChannel && !newInterval) return interaction.reply("Please provide at least a channel ID or a new interval to update.");
+                if (newChannel && !interaction.guild.channels.cache.has(newChannel)) return interaction.reply("Invalid channel ID provided.");
+                if (newInterval && (newInterval < 1 || newInterval > 1440)) return interaction.reply("Interval must be between 1 and 1440 minutes.");
+
+                if (newChannel) {
+                    await redisClient.hSet(key, 'channelId', newChannel);
+                }
+                if (newInterval) {
+                    await redisClient.hSet(key, 'interval', newInterval);
+                }
+                return interaction.reply(`Updated monitoring for ${url}. New channel: ${newChannel || 'unchanged'}, new interval: ${newInterval || 'unchanged'}m.`);
 
             }
         } catch (error) {
             console.error('Error handling monitor command:', error);
-            return replyEphemeral(interaction, 'Something went wrong while processing your command.');
+            return interaction.reply('Something went wrong while processing your command.');
         }
     }
 }
