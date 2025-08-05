@@ -27,7 +27,7 @@ function importChannelsToSkip() {
 const channelsToSkip = importChannelsToSkip();
 // Initialize Discord client
 const client = new Streamyfin({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.MessageContent],
 });
 
 import path from 'path';
@@ -123,7 +123,17 @@ client.on("interactionCreate", async (interaction) => {
 
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
-  if (message.channelId == process.env.AI_SUPORTCHANNEL_ID) client.handleSupport(message);
+
+  //if (message.channelId === process.env.AI_SUPPORTCHANNEL_ID) return client.handleSupport(message);
+
+  if (message.mentions.has(client.user)) {
+    const onlyMentioned = /^<@!?(\d+)>$/.test(message.content.trim()) && message.mentions.has(client.user);
+    if (onlyMentioned) {
+      return message.reply("👋 Hey! To use the AI support feature, please provide more context or ask a question after mentioning me.");
+    } else {
+      client.handleSupport(message);
+    }
+  }
 
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)

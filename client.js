@@ -217,22 +217,17 @@ Always follow the format and rules above without exception.
 
   async handleSupport(message) {
     const userID = message.author.id;
-    const now = Date.now();
+    const query = message.content.trim();
     const ratelimit = this.userAIRateLimit;
+    const now = Date.now();
 
     if (ratelimit.has(userID) && now - ratelimit.get(userID) < 1000) return;
+    if (!query || query.length < 5) return await message.reply("Please provide a question or query for support.");
     ratelimit.set(userID, now);
-
-    const query = message.content.trim();
-
-    if (!query || query.length < 5) {
-      await message.reply("Please provide a question or query for support.");
-      return;
-    }
 
     const typingInterval = setInterval(() => {
       message.channel.sendTyping().catch(() => clearInterval(typingInterval));
-    }, 5000);
+    }, 10000);
 
     try {
       await message.channel.sendTyping();
@@ -245,13 +240,49 @@ Always follow the format and rules above without exception.
         }
       );
 
-      if (request.data && request.data.response && request.data.response.length > 0) {
-        await message.reply(request.data.response);
+      const response = request.data?.response;
+
+      if (response && response.length > 0) {
+        const sentMessage = await message.reply(response);
+
+        await sentMessage.react("👍");
+        await sentMessage.react("👎");
+
+        const filter = (reaction, user) => ["👍", "👎"].includes(reaction.emoji.name) && user.id === userID;
+
+        const collector = sentMessage.createReactionCollector({ filter, max: 1, time: 180_000 });
+
+        collector.on("collect", async (reaction) => {
+          const feedbackType = reaction.emoji.name === "👍" ? "positive" : "negative";
+
+          try {
+            await axios.post(
+              `${process.env.AI_SUPPRT_URL}/feedback`,
+              {
+                user_id: userID,
+                query,
+                answer: response,
+                feedback_type: feedbackType,
+              },
+              {
+                headers: { 'X-API-Key': process.env.AI_APIKEY },
+              }
+            );
+
+            if (feedbackType === "positive") {
+              await sentMessage.reply("Thanks for the feedback! I'm glad you found the answer helpful.");
+            } else {
+              await sentMessage.reply("Sorry for the dissatisfaction. I'll work on improving the answer.");
+            }
+          } catch (err) {
+            console.error("(AI Support) Feedback error:", err.message);
+          }
+        });
       } else {
         await message.reply("Sorry, I couldn't find an answer to your question.");
       }
     } catch (error) {
-      console.error("Error in AI Support:", error.message);
+      console.error("(AI Support) General error:", error.message);
     } finally {
       clearInterval(typingInterval);
     }
