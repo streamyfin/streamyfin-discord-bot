@@ -1,13 +1,14 @@
 import redisClient from "./redisClient.js";
 import Parser from 'rss-parser';
 
-const rssParser = new Parser();
+const rssParser = new Parser({
+    headers: { "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)" }
+});
 
 export default async function startRSS(client) {
     while (true) {
         try {
             const keys = await redisClient.keys('monitor:*');
-
             for (const key of keys) {
                 const guildConfig = await redisClient.hGetAll(key);
                 if (!guildConfig?.url || !guildConfig?.type) continue;
@@ -16,10 +17,9 @@ export default async function startRSS(client) {
                 const lastCheck = parseInt(await redisClient.get(lastCheckKey)) || 0;
                 const now = Date.now();
                 const intervalMs = (parseInt(guildConfig.interval) || 5) * 60 * 1000;
+
                 if (now - lastCheck < intervalMs) continue;
-
                 await redisClient.set(lastCheckKey, now);
-
                 const items = await fetchContent(guildConfig.type, guildConfig.url);
                 if (!items?.length) continue;
 
@@ -67,7 +67,9 @@ async function fetchContent(type, url) {
 
         if (type === 'reddit') {
             const subreddit = url.replace(/^https:\/\/(www\.)?reddit\.com\/r\//, '').replace(/\/$/, '');
-            const res = await fetch(`https://www.reddit.com/r/${subreddit}/new.json?limit=5`);
+            const res = await fetch(`https://www.reddit.com/r/${subreddit}/new.json?limit=5`
+                , { headers: { "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)" } }
+            );
             const data = await res.json();
             return data.data.children.map(post => ({
                 title: post.data.title,

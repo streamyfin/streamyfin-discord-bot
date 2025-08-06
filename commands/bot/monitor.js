@@ -3,7 +3,7 @@ import redisClient from '../../redisClient.js';
 
 const serverRoles = ["Developer", "Administrator"];
 const isValidUrl = (url) => /^https?:\/\/\S+$/i.test(url);
-
+const isValidRSSUrl = (url) => /https?:\/\/[^\s]+(?:\.rss|\.xml|feed(?:\/)?|\/rss\/?|\/feed\/?)(?:[^\s]*)?/i.test(url);
 const buildMonitorCommand = () =>
     new SlashCommandBuilder()
         .setName('monitor')
@@ -76,10 +76,11 @@ export default {
                 const interval = interaction.options.getInteger('interval') || 5;
                 const key = `monitor:${guildId}:${url}`;
                 if (!['reddit', 'rss'].includes(type)) return interaction.reply("Invalid source type.");
-                if (!isValidUrl(url)) return interaction.reply("Please provide a valid URL.");
+                if (!isValidUrl(url) && !isValidRSSUrl(url)) return interaction.reply("Please provide a valid URL.");
                 if (interval < 1 || interval > 1440) return interaction.reply("Interval must be between 1 and 1440 minutes.");
                 if (await redisClient.exists(key)) return interaction.reply(`This source is already being monitored.`);
-
+                if (type === 'rss' && !isValidRSSUrl(url)) return interaction.reply("Please provide a valid RSS feed URL.");
+                
                 await redisClient.hSet(key, {
                     type,
                     url,

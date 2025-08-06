@@ -52,9 +52,9 @@ fs.readdirSync("./commands").forEach(async dir => {
   }
 });
 
-client.on("ready", () => {
+client.on("ready", async () => {
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
-     startRSS(client);
+  await startRSS(client);
 })
 
 client.on("interactionCreate", async (interaction) => {
@@ -127,7 +127,7 @@ client.on("interactionCreate", async (interaction) => {
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
 
-  //if (message.channelId === process.env.AI_SUPPORTCHANNEL_ID) return client.handleSupport(message);
+  if (message.channelId === process.env.AI_SUPPORTCHANNEL_ID) return client.handleSupport(message);
 
   if (message.mentions.has(client.user)) {
     const onlyMentioned = /^<@!?(\d+)>$/.test(message.content.trim()) && message.mentions.has(client.user);
