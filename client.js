@@ -220,7 +220,9 @@ Always follow the format and rules above without exception.
     const query = message.content.trim();
     const ratelimit = this.userAIRateLimit;
     const now = Date.now();
-
+    const messageComments = ["^", "//", "-"];
+    if (messageComments.some(i => query.startsWith(i))) return;
+    
     if (ratelimit.has(userID) && now - ratelimit.get(userID) < 1000) return;
     if (!query || query.length < 5) return await message.reply("Please provide a question or query for support.");
     ratelimit.set(userID, now);
