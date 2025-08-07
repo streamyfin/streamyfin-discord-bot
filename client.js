@@ -87,6 +87,7 @@ export default class Streamyfin extends Client {
     const isChannel = /#\w+/g;
     const isLink = /https?:\/\/[^\s]+/g;
     if (isEmoji.test(text.trim()) || isLink.test(text) || isMentions.test(text) || isChannel.test(text)) return;
+
     try {
       const prompt = `
 You are a machine translation module. Your sole task is to translate user input into English.  
