@@ -6,10 +6,8 @@ import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'dis
 import { eldr } from 'eldr';
 import fs from 'fs';
 import redisClient from './redisClient.js';
-import startRSS from './rss.js'
 
 const tempCommands = []
-
 function importNonEnglishTrolls() {
   try {
     return JSON.parse(process.env.PEOPLE_TO_TROLL).map(String);
@@ -27,9 +25,17 @@ function importChannelsToSkip() {
 
 }
 const channelsToSkip = importChannelsToSkip();
+function importChannelsToIgnore() {
+  try {
+    return JSON.parse(process.env.CHANNELS_TO_IGNORE).map(String);
+  } catch (error) {
+    console.log("no channels will be ignored")
+  }
+}
+const channelsToIgnore = importChannelsToIgnore();
 // Initialize Discord client
 const client = new Streamyfin({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, GatewayIntentBits.MessageContent],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
 import path from 'path';
@@ -52,12 +58,26 @@ fs.readdirSync("./commands").forEach(async dir => {
   }
 });
 
-client.on("ready", async () => {
+client.on("ready", () => {
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
-  await startRSS(client);
 })
 
 client.on("interactionCreate", async (interaction) => {
+  // Ignore interactions from ignored channels, but send an ephemeral reply
+  if (channelsToIgnore && interaction.channelId && channelsToIgnore.includes(interaction.channelId)) {
+    if (interaction.isRepliable && interaction.isRepliable()) {
+      try {
+        await interaction.reply({
+          content: 'This channel is ignored by the bot.',
+          flags: MessageFlags.Ephemeral,
+        });
+      } catch (e) {
+        // Ignore errors, e.g. if already replied
+      }
+    }
+    return;
+  }
+
   if (interaction.isCommand()) {
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
@@ -125,18 +145,11 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 client.on('messageCreate', async (message) => {
+  
+  if (channelsToIgnore && channelsToIgnore.includes(message.channelId)) return;
+
   if (!message.guild || message.author.bot) return;
-  
-  if (message.channelId === process.env.AI_SUPPORTCHANNEL_ID) return client.handleSupport(message);
-  
-  /* if (message.mentions.users.has(client.user)) {
-    const onlyMentioned = /^<@!?(\d+)>$/.test(message.content.trim()) && message.mentions.has(client.user);
-    if (onlyMentioned) {
-      return message.reply("👋 Hey! To use the AI support feature, please provide more context or ask a question after mentioning me.");
-    } else {
-      client.handleSupport(message);
-    }
-  } */
+  if (message.channelId == process.env.AI_SUPORTCHANNEL_ID) client.handleSupport(message);
 
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
@@ -148,6 +161,8 @@ client.on('messageCreate', async (message) => {
 
     if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27))) {
       const translatedJSON = await client.ollamaTranslate(message.content)
+      console.log("translatedJSON")
+      console.log(translatedJSON)
       if (translatedJSON && translatedJSON.wasTranslated) {
         const translation = translatedJSON.translation;
         const confidence = translatedJSON.confidence;
