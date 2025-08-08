@@ -187,7 +187,7 @@ Translation: "${translation}"
   }
 });
 const registerCommands = async () => {
-  if (client.githubToken) await client.fetchReleases();
+  //if (client.githubToken) await client.fetchReleases();
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
