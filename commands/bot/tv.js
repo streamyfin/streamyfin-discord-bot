@@ -6,7 +6,7 @@ export default {
         .setDescription('We´re working on it!'),  
         
     async run(interaction) {
-        await interaction.reply("The TV version of Streamyfin is still under development, but we're pleased to report that recent progress has been steady and promising. While it's too soon to commit to a release date, development is moving forward, and we'll keep you updated along the way.",      
+        await interaction.reply("The Android TV version of Streamyfin is now available in an early alpha stage on GitHub as a separate APK. It must be sideloaded manually for now, and we strongly encourage early testers to share their feedback. Apple TV isn’t available yet, but once it’s released, you’ll hear about it.",      
         ); 
     },
 };
