@@ -44,22 +44,33 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-fs.readdirSync("./commands").forEach(async dir => {
-  const fullPath = path.join(__dirname, "commands", dir);
-  if (!fs.statSync(fullPath).isDirectory()) return; // 👈 Skip if not a folder
+// Ensure client.commands is initialized
+if (!client.commands) client.commands = new Map();
 
+const commandImportPromises = [];
+fs.readdirSync("./commands").forEach(dir => {
+  const fullPath = path.join(__dirname, "commands", dir);
+  if (!fs.statSync(fullPath).isDirectory()) return;
   const files = fs.readdirSync(fullPath).filter(file => file.endsWith(".js"));
   for (let file of files) {
     const filePath = path.join(fullPath, file);
-    const props = await import(filePath);
-    client.commands.set(props.default.data.name, props.default);
-    tempCommands.push(props.default.data);
-    console.log(`[COMMAND] => Loaded ${file}`);
+    // Collect promise
+    const importPromise = import(filePath).then(props => {
+      client.commands.set(props.default.data.name, props.default);
+      tempCommands.push(props.default.data);
+      console.log(`[COMMAND] => Loaded ${file}`);
+    });
+    commandImportPromises.push(importPromise);
   }
 });
 
-client.on("ready", () => {
+client.on("ready", async () => {
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
+  // Wait until all commands are loaded
+  await Promise.all(commandImportPromises);
+  // Now all commands are loaded:
+  console.log(tempCommands);
+  await registerCommands();
 })
 
 client.on("interactionCreate", async (interaction) => {
@@ -150,14 +161,16 @@ client.on('messageCreate', async (message) => {
   if (channelsToIgnore && channelsToIgnore.includes(message.channelId)) return;
   if (message.channelId == process.env.AI_SUPPORTCHANNEL_ID) return client.handleSupport(message);
 
-  /* if (message.mentions.users.has(client.user)) {
+  /*
+  if (message.mentions.users.has(client.user)) {
     const onlyMentioned = /^<@!?(\d+)>$/.test(message.content.trim()) && message.mentions.has(client.user);
     if (onlyMentioned) {
       return message.reply("👋 Hey! To use the AI support feature, please provide more context or ask a question after mentioning me.");
     } else {
       client.handleSupport(message);
     }
-  } */
+  }
+  */
 
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
@@ -210,6 +223,7 @@ const registerCommands = async () => {
   }
 };
 
-registerCommands();
+// Remove direct call at the end:
+// registerCommands();
 client.login(process.env.DISCORD_TOKEN);
 // trigger release again
