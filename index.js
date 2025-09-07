@@ -223,7 +223,4 @@ const registerCommands = async () => {
   }
 };
 
-// Remove direct call at the end:
-// registerCommands();
 client.login(process.env.DISCORD_TOKEN);
-// trigger release again
