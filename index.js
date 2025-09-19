@@ -4,28 +4,10 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import Streamyfin from './client.js';
 import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'discord.js';
-import { eldr } from 'eldr';
 import fs from 'fs';
 import redisClient from './redisClient.js';
 
 const tempCommands = []
-function importNonEnglishTrolls() {
-  try {
-    return JSON.parse(process.env.PEOPLE_TO_TROLL).map(String);
-  } catch (error) {
-    console.log("no trolling")
-  }
-}
-const nonEnglishTrolls = importNonEnglishTrolls()
-function importChannelsToSkip() {
-  try {
-    return JSON.parse(process.env.CHANNELS_TO_SKIP).map(String);
-  } catch (error) {
-    console.log("no channels will be skipped")
-  }
-
-}
-const channelsToSkip = importChannelsToSkip();
 function importChannelsToIgnore() {
   try {
     return JSON.parse(process.env.CHANNELS_TO_IGNORE).map(String);
@@ -172,38 +154,6 @@ client.on('messageCreate', async (message) => {
 
   let unitConversion = client.convertUnits(message.content);
   if (unitConversion !== null) message.reply(unitConversion)
-
-  if (!(channelsToSkip && channelsToSkip.includes(message.channelId))) {
-    const LangDetected = eldr.detect(message.content);
-    const isEnglish = (LangDetected.isReliable() && LangDetected.iso639_1 === "en") || (!LangDetected.isReliable() && LangDetected.iso639_1 == "")
-    const cjkRegex = /[\u4e00-\u9faf\u3400-\u4dbf\uac00-\ud7af]/;
-
-    if (!isEnglish && ((cjkRegex.test(message.content) || message.content.length >= 27))) {
-      const translatedJSON = await client.ollamaTranslate(message.content)
-      console.log("translatedJSON")
-      console.log(translatedJSON)
-      if (translatedJSON && translatedJSON.wasTranslated) {
-        const translation = translatedJSON.translation;
-        const confidence = translatedJSON.confidence;
-        const language = translatedJSON.language;
-        const isAccurate = translatedJSON.isAccurate;
-
-        const reply = `
-Language: ${language} Confidence: ${confidence} ${isAccurate} -> English,
-Translation: "${translation}"
-        `
-        message.reply(`${reply}`);
-      }
-      else if (nonEnglishTrolls && nonEnglishTrolls.includes(message.author.id)) {
-        const urlRegex = /https?:\/\/[^\s]+/g;
-        const messageWithoutUrls = message.content.replace(urlRegex, '').trim();
-
-        if (messageWithoutUrls.length > 0) {
-          message.reply('https://tenor.com/view/speak-english-pulp-fiction-do-you-speak-it-gif-16440534')
-        }
-      }
-    }
-  }
 });
 const registerCommands = async () => {
   //if (client.githubToken) await client.fetchReleases();
