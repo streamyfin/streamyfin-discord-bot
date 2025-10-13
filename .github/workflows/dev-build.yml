@@ -23,26 +23,32 @@ jobs:
         id: changes
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "RELEVANT_CHANGES=true" >> $GITHUB_ENV
+            echo "RELEVANT_CHANGES=true" >> "${GITHUB_ENV}"
             echo "Manual trigger - building dev image"
           else
             git fetch origin codebase-rework || git fetch origin main
+            CHANGED=""
             # Check if we can access the before commit
             if [ -n "${{ github.event.before }}" ] && git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
-              CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+              CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" || echo "")
               echo "Using commit range: ${{ github.event.before }}..${{ github.sha }}"
             else
-              # Fallback: diff last two commits if previous SHA is missing or inaccessible
-              CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git show --name-only --format= HEAD)
-              echo "Using fallback: comparing HEAD~1..HEAD or showing HEAD changes"
+              # Fallback: check if HEAD~1 exists, then diff or show HEAD changes
+              if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+                CHANGED=$(git diff --name-only HEAD~1 HEAD || echo "")
+                echo "Using fallback: comparing HEAD~1..HEAD"
+              else
+                CHANGED=$(git show --name-only --format= HEAD || echo "")
+                echo "Using fallback: showing HEAD changes (no previous commit)"
+              fi
             fi
             echo "Changed files:"
-            echo "$CHANGED"
-            if echo "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js|client\.js|package\.json|Dockerfile|\.github/workflows/)'; then
-              echo "RELEVANT_CHANGES=true" >> $GITHUB_ENV
+            printf '%s\n' "$CHANGED"
+            if [ -n "$CHANGED" ] && printf '%s' "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js|client\.js|package\.json|Dockerfile|\.github/workflows/)'; then
+              echo "RELEVANT_CHANGES=true" >> "${GITHUB_ENV}"
               echo "✅ Relevant code changes detected"
             else
-              echo "RELEVANT_CHANGES=false" >> $GITHUB_ENV
+              echo "RELEVANT_CHANGES=false" >> "${GITHUB_ENV}"
               echo "⚠️ No relevant code changes detected"
             fi
           fi
