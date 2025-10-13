@@ -2,88 +2,236 @@ import redisClient from "./redisClient.js";
 import Parser from 'rss-parser';
 
 const rssParser = new Parser({
-    headers: { "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)" }
+  headers: { 
+    "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)",
+    "Accept": "application/rss+xml, application/xml, text/xml"
+  },
+  timeout: 10000,
+  maxRedirects: 5,
 });
 
+const RETRY_DELAY = 30000; // 30 seconds
+const CLEANUP_THRESHOLD = 1000; // Clean up after this many keys
+let isShuttingDown = false;
+
+/**
+ * Start RSS monitoring loop
+ * @param {Client} client - Discord client instance
+ */
 export default async function startRSS(client) {
-    while (true) {
-        try {
-            const keys = await redisClient.keys('monitor:*');
-            for (const key of keys) {
-                const guildConfig = await redisClient.hGetAll(key);
-                if (!guildConfig?.url || !guildConfig?.type) continue;
-
-                const lastCheckKey = `${key}:lastCheck`;
-                const lastCheck = parseInt(await redisClient.get(lastCheckKey)) || 0;
-                const now = Date.now();
-                const intervalMs = (parseInt(guildConfig.interval) || 5) * 60 * 1000;
-
-                if (now - lastCheck < intervalMs) continue;
-                await redisClient.set(lastCheckKey, now);
-                const items = await fetchContent(guildConfig.type, guildConfig.url);
-                if (!items?.length) continue;
-
-                const sentIdsKey = `${key}:sent`;
-                let keyType = await redisClient.type(sentIdsKey);
-                if (keyType !== 'set' && keyType !== 'none') {
-                    await redisClient.del(sentIdsKey);
-                }
-
-                for (const item of items) {
-                    keyType = await redisClient.type(sentIdsKey);
-                    if (keyType !== 'set' && keyType !== 'none') {
-                        await redisClient.del(sentIdsKey);
-                    }
-
-                    const uniqueId = item.id || item.link || item.guid;
-                    if (!uniqueId) continue;
-                    
-                    const alreadySent = await redisClient.sIsMember(sentIdsKey, uniqueId);
-                    if (alreadySent) continue;
-
-                    const message = `📢 **${item.title}**\n${item.link || item.url}`;
-                    const channel = await client.channels.fetch(guildConfig.channelId).catch(() => null);
-                    if (channel) await channel.send(message);
-
-                    await redisClient.sAdd(sentIdsKey, uniqueId);
-                    await redisClient.expire(sentIdsKey, 60 * 60 * 24 * 7);
-                }
-            }
-        } catch (err) {}
-        await sleep(30000);
-    }
-}
-
-async function fetchContent(type, url) {
+  console.log('[RSS] Starting monitoring service...');
+  
+  while (!isShuttingDown) {
     try {
-        if (type === 'rss') {
-            const feed = await rssParser.parseURL(url);
-            return feed.items.map(item => ({
-                title: item.title,
-                link: item.link,
-                guid: item.guid || item.link
-            }));
-        }
-
-        if (type === 'reddit') {
-            const subreddit = url.replace(/^https:\/\/(www\.)?reddit\.com\/r\//, '').replace(/\/$/, '');
-            const res = await fetch(`https://www.reddit.com/r/${subreddit}/new.json?limit=5`
-                , { headers: { "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)" } }
-            );
-            const data = await res.json();
-            return data.data.children.map(post => ({
-                title: post.data.title,
-                link: `https://reddit.com${post.data.permalink}`,
-                id: post.data.id
-            }));
-        }
-        return [];
-    } catch (err) {
-        console.error(`Failed to fetch ${type} content from ${url}:`, err.message);
-        return [];
+      await processRSSFeeds(client);
+    } catch (error) {
+      console.error('[RSS] Error in main loop:', error.message);
     }
+    
+    // Wait before next iteration
+    await sleep(RETRY_DELAY);
+  }
+  
+  console.log('[RSS] Monitoring service stopped');
 }
 
+/**
+ * Process all configured RSS feeds
+ * @param {Client} client - Discord client instance
+ */
+async function processRSSFeeds(client) {
+  try {
+    const keys = await redisClient.keys('monitor:*');
+    console.log(`[RSS] Processing ${keys.length} configured feeds`);
+    
+    for (const key of keys) {
+      if (isShuttingDown) break;
+      
+      try {
+        await processSingleFeed(client, key);
+      } catch (error) {
+        console.error(`[RSS] Error processing feed ${key}:`, error.message);
+      }
+    }
+    
+    // Periodic cleanup
+    if (keys.length > CLEANUP_THRESHOLD) {
+      await cleanupOldEntries();
+    }
+  } catch (error) {
+    console.error('[RSS] Error fetching feed keys:', error.message);
+  }
+}
+
+/**
+ * Process a single RSS feed
+ * @param {Client} client - Discord client instance
+ * @param {string} key - Redis key for feed configuration
+ */
+async function processSingleFeed(client, key) {
+  const guildConfig = await redisClient.hGetAll(key);
+  if (!guildConfig?.url || !guildConfig?.type || !guildConfig?.channelId) {
+    console.warn(`[RSS] Invalid configuration for ${key}`);
+    return;
+  }
+
+  const lastCheckKey = `${key}:lastCheck`;
+  const lastCheck = parseInt(await redisClient.get(lastCheckKey)) || 0;
+  const now = Date.now();
+  const intervalMs = Math.max((parseInt(guildConfig.interval) || 5) * 60 * 1000, 60000); // Minimum 1 minute
+
+  if (now - lastCheck < intervalMs) {
+    return; // Too soon to check again
+  }
+
+  await redisClient.set(lastCheckKey, now);
+  
+  const items = await fetchContent(guildConfig.type, guildConfig.url);
+  if (!items?.length) {
+    console.log(`[RSS] No new items for ${key}`);
+    return;
+  }
+
+  const sentIdsKey = `${key}:sent`;
+  await ensureSetKey(sentIdsKey);
+
+  let newItemsCount = 0;
+  for (const item of items) {
+    if (isShuttingDown) break;
+    
+    const uniqueId = item.id || item.link || item.guid;
+    if (!uniqueId) continue;
+    
+    const alreadySent = await redisClient.sIsMember(sentIdsKey, uniqueId);
+    if (alreadySent) continue;
+
+    try {
+      const channel = await client.channels.fetch(guildConfig.channelId);
+      if (channel) {
+        const message = `📢 **${item.title}**\n${item.link || item.url}`;
+        await channel.send(message);
+        
+        await redisClient.sAdd(sentIdsKey, uniqueId);
+        await redisClient.expire(sentIdsKey, 60 * 60 * 24 * 7); // 7 days
+        newItemsCount++;
+      }
+    } catch (error) {
+      console.error(`[RSS] Error sending message for ${key}:`, error.message);
+    }
+  }
+  
+  if (newItemsCount > 0) {
+    console.log(`[RSS] Sent ${newItemsCount} new items for ${key}`);
+  }
+}
+
+/**
+ * Ensure Redis key is a set, recreate if wrong type
+ * @param {string} key - Redis key to check
+ */
+async function ensureSetKey(key) {
+  try {
+    const keyType = await redisClient.type(key);
+    if (keyType !== 'set' && keyType !== 'none') {
+      await redisClient.del(key);
+    }
+  } catch (error) {
+    console.error(`[RSS] Error ensuring set key ${key}:`, error.message);
+  }
+}
+
+/**
+ * Fetch content from RSS or Reddit
+ * @param {string} type - Content type ('rss' or 'reddit')
+ * @param {string} url - URL to fetch from
+ * @returns {Promise<Array>} Array of content items
+ */
+async function fetchContent(type, url) {
+  try {
+    if (type === 'rss') {
+      const feed = await rssParser.parseURL(url);
+      return feed.items.slice(0, 10).map(item => ({
+        title: item.title,
+        link: item.link,
+        guid: item.guid || item.link,
+        id: item.id || item.guid || item.link
+      }));
+    }
+
+    if (type === 'reddit') {
+      const subreddit = url
+        .replace(/^https:\/\/(www\.)?reddit\.com\/r\//, '')
+        .replace(/\/$/, '');
+      
+      const response = await fetch(
+        `https://www.reddit.com/r/${subreddit}/new.json?limit=5`,
+        { 
+          headers: { 
+            "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)",
+            "Accept": "application/json"
+          },
+          timeout: 10000
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error(`Reddit API returned ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.data.children.map(post => ({
+        title: post.data.title,
+        link: `https://reddit.com${post.data.permalink}`,
+        id: post.data.id
+      }));
+    }
+    
+    console.warn(`[RSS] Unknown content type: ${type}`);
+    return [];
+  } catch (error) {
+    console.error(`[RSS] Failed to fetch ${type} content from ${url}:`, error.message);
+    return [];
+  }
+}
+
+/**
+ * Clean up old Redis entries
+ */
+async function cleanupOldEntries() {
+  try {
+    console.log('[RSS] Performing cleanup...');
+    const keys = await redisClient.keys('monitor:*:sent');
+    let cleanedCount = 0;
+    
+    for (const key of keys) {
+      const ttl = await redisClient.ttl(key);
+      if (ttl === -1) { // No expiration set
+        await redisClient.expire(key, 60 * 60 * 24 * 7); // Set 7 day expiration
+        cleanedCount++;
+      }
+    }
+    
+    if (cleanedCount > 0) {
+      console.log(`[RSS] Set expiration on ${cleanedCount} keys`);
+    }
+  } catch (error) {
+    console.error('[RSS] Error during cleanup:', error.message);
+  }
+}
+
+/**
+ * Sleep for specified milliseconds
+ * @param {number} ms - Milliseconds to sleep
+ * @returns {Promise<void>}
+ */
 function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Gracefully shutdown RSS monitoring
+ */
+export function stopRSS() {
+  console.log('[RSS] Shutdown requested...');
+  isShuttingDown = true;
 }

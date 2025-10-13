@@ -1,21 +1,38 @@
 import dotenv from 'dotenv';
 dotenv.config();
+
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Streamyfin from './client.js';
 import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import redisClient from './redisClient.js';
+import startRSS from './rss.js';
+import { validateEnvironment, setEnvironmentDefaults, logValidationResults } from './utils/validation.js';
 
-const tempCommands = []
-function importChannelsToIgnore() {
+// Validate environment before starting
+const validation = validateEnvironment();
+logValidationResults(validation);
+setEnvironmentDefaults();
+
+const tempCommands = [];
+
+/**
+ * Parse and validate channels to ignore from environment
+ * @returns {string[]|null} Array of channel IDs or null if none configured
+ */
+function parseChannelsToIgnore() {
   try {
-    return JSON.parse(process.env.CHANNELS_TO_IGNORE).map(String);
+    if (!process.env.CHANNELS_TO_IGNORE) return null;
+    const channels = JSON.parse(process.env.CHANNELS_TO_IGNORE);
+    return Array.isArray(channels) ? channels.map(String) : null;
   } catch (error) {
-    console.log("no channels will be ignored")
+    console.warn('Invalid CHANNELS_TO_IGNORE format, ignoring setting');
+    return null;
   }
 }
-const channelsToIgnore = importChannelsToIgnore();
+
+const channelsToIgnore = parseChannelsToIgnore();
 // Initialize Discord client
 const client = new Streamyfin({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -27,148 +44,249 @@ const __dirname = path.dirname(__filename);
 // Ensure client.commands is initialized
 if (!client.commands) client.commands = new Map();
 
-const commandImportPromises = [];
-fs.readdirSync("./commands").forEach(dir => {
-  const fullPath = path.join(__dirname, "commands", dir);
-  if (!fs.statSync(fullPath).isDirectory()) return;
-  const files = fs.readdirSync(fullPath).filter(file => file.endsWith(".js"));
-  for (let file of files) {
-    const filePath = path.join(fullPath, file);
-    // Collect promise
-    const importPromise = import(filePath).then(props => {
-      client.commands.set(props.default.data.name, props.default);
-      tempCommands.push(props.default.data);
-      console.log(`[COMMAND] => Loaded ${file}`);
+/**
+ * Load commands from directory structure
+ * @returns {Promise<void>}
+ */
+async function loadCommands() {
+  const commandsPath = path.join(__dirname, 'commands');
+  const commandImportPromises = [];
+  
+  try {
+    const dirs = fs.readdirSync(commandsPath);
+    
+    for (const dir of dirs) {
+      const fullPath = path.join(commandsPath, dir);
+      if (!fs.statSync(fullPath).isDirectory()) continue;
+      
+      const files = fs.readdirSync(fullPath).filter(file => file.endsWith('.js'));
+      
+      for (const file of files) {
+        const filePath = path.join(fullPath, file);
+        const importPromise = import(filePath)
+          .then(props => {
+            if (!props.default?.data?.name) {
+              console.warn(`[COMMAND] Invalid command structure in ${file}`);
+              return;
+            }
+            client.commands.set(props.default.data.name, props.default);
+            tempCommands.push(props.default.data);
+            console.log(`[COMMAND] => Loaded ${file}`);
+          })
+          .catch(error => {
+            console.error(`[COMMAND] Failed to load ${file}:`, error.message);
+          });
+        
+        commandImportPromises.push(importPromise);
+      }
+    }
+    
+    await Promise.all(commandImportPromises);
+  } catch (error) {
+    console.error('[COMMAND] Error loading commands:', error.message);
+  }
+}
+
+client.on("ready", async () => {
+  console.log(`[BOT] ${client.user.tag} is ready!`);
+  client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
+  
+  // Load commands and register them
+  await loadCommands();
+  console.log(`[COMMAND] Loaded ${tempCommands.length} commands`);
+  await registerCommands();
+  
+  // Start RSS monitoring if configured
+  if (process.env.ENABLE_RSS_MONITORING === 'true') {
+    console.log('[RSS] Starting RSS monitoring...');
+    startRSS(client).catch(error => {
+      console.error('[RSS] RSS monitoring error:', error.message);
     });
-    commandImportPromises.push(importPromise);
   }
 });
 
-client.on("ready", async () => {
-  client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
-  // Wait until all commands are loaded
-  await Promise.all(commandImportPromises);
-  // Now all commands are loaded:
-  console.log(tempCommands);
-  await registerCommands();
-})
-
 client.on("interactionCreate", async (interaction) => {
   // Ignore interactions from ignored channels, but send an ephemeral reply
-  if (channelsToIgnore && interaction.channelId && channelsToIgnore.includes(interaction.channelId)) {
-    if (interaction.isRepliable && interaction.isRepliable()) {
+  if (channelsToIgnore?.includes(interaction.channelId)) {
+    if (interaction.isRepliable()) {
       try {
         await interaction.reply({
           content: 'This channel is ignored by the bot.',
           flags: MessageFlags.Ephemeral,
         });
-      } catch (e) {
-        // Ignore errors, e.g. if already replied
+      } catch (error) {
+        // Ignore reply errors for ignored channels
       }
     }
     return;
   }
 
-  if (interaction.isCommand()) {
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
+  try {
+    if (interaction.isCommand()) {
+      await handleCommandInteraction(interaction);
+    } else if (interaction.isButton()) {
+      await handleButtonInteraction(interaction);
+    } else if (interaction.isModalSubmit()) {
+      await handleModalSubmit(interaction);
+    }
+  } catch (error) {
+    console.error('[INTERACTION] Unhandled interaction error:', error.message);
+  }
+});
+
+/**
+ * Handle command interactions
+ * @param {Interaction} interaction 
+ */
+async function handleCommandInteraction(interaction) {
+  const command = client.commands.get(interaction.commandName);
+  if (!command) {
+    console.warn(`[INTERACTION] Unknown command: ${interaction.commandName}`);
+    return;
+  }
+
+  try {
+    await command.run(interaction);
+  } catch (error) {
+    console.error(`[INTERACTION] Error executing ${interaction.commandName}:`, error.message);
+    
+    const errorMessage = {
+      content: 'There was an error while executing this command!',
+      flags: MessageFlags.Ephemeral,
+    };
+
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp(errorMessage).catch(() => {});
+    } else {
+      await interaction.reply(errorMessage).catch(() => {});
+    }
+  }
+}
+
+/**
+ * Handle button interactions
+ * @param {Interaction} interaction 
+ */
+async function handleButtonInteraction(interaction) {
+  const { customId, user, guild } = interaction;
+
+  if (customId.startsWith('resolve_report_')) {
+    const messageId = customId.replace('resolve_report_', '');
 
     try {
-      await command.run(interaction);
-    } catch (error) {
-      console.error(error);
-      await interaction.reply({
-        content: 'There was an error while executing this command!',
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-  } else if (interaction.isButton()) {
-    const { customId, user, guild } = interaction;
-
-    if (customId.startsWith('resolve_report_')) {
-      const messageId = customId.replace('resolve_report_', '');
-
-      try {
-        const member = await guild.members.fetch(user.id);
-        if (!member.permissions.has('ManageMessages')) {
-          return interaction.reply({
-            content: 'You do not have permission to resolve this report.',
-            flags: MessageFlags.Ephemeral,
-          });
-        }
-
-        await redisClient.del(`reported_message_${messageId}`);
-
-        const originalEmbed = interaction.message.embeds[0];
-        const updatedEmbed = EmbedBuilder.from(originalEmbed)
-          .setFooter({ text: `Report resolved by ${user.tag}` })
-          .setColor(0x00ff00);
-
-        await interaction.update({
-          embeds: [updatedEmbed],
-          components: [],
-        });
-      } catch (error) {
-        console.error(error);
-        await interaction.reply({
-          content: 'There was an error while resolving this report!',
+      const member = await guild.members.fetch(user.id);
+      if (!member.permissions.has('ManageMessages')) {
+        return interaction.reply({
+          content: 'You do not have permission to resolve this report.',
           flags: MessageFlags.Ephemeral,
         });
       }
+
+      await redisClient.del(`reported_message_${messageId}`);
+
+      const originalEmbed = interaction.message.embeds[0];
+      const updatedEmbed = EmbedBuilder.from(originalEmbed)
+        .setFooter({ text: `Report resolved by ${user.tag}` })
+        .setColor(0x00ff00);
+
+      await interaction.update({
+        embeds: [updatedEmbed],
+        components: [],
+      });
+    } catch (error) {
+      console.error('[INTERACTION] Error resolving report:', error.message);
+      await interaction.reply({
+        content: 'There was an error while resolving this report!',
+        flags: MessageFlags.Ephemeral,
+      }).catch(() => {});
     }
   }
-  else if (interaction.isModalSubmit && interaction.isModalSubmit()) {
-    if (interaction.customId.startsWith('report_modal_')) {
-      const command = client.commands.get('Report Message');
-      if (command) {
-        try {
-          await command.run(interaction);
-        } catch (error) {
-          console.error(error);
-          await interaction.reply({
-            content: 'There was an error while submitting your report!',
-            flags: MessageFlags.Ephemeral,
-          });
-        }
+}
+
+/**
+ * Handle modal submit interactions
+ * @param {Interaction} interaction 
+ */
+async function handleModalSubmit(interaction) {
+  if (interaction.customId.startsWith('report_modal_')) {
+    const command = client.commands.get('Report Message');
+    if (command) {
+      try {
+        await command.run(interaction);
+      } catch (error) {
+        console.error('[INTERACTION] Error handling modal submit:', error.message);
+        await interaction.reply({
+          content: 'There was an error while submitting your report!',
+          flags: MessageFlags.Ephemeral,
+        }).catch(() => {});
       }
     }
   }
-});
+}
 
 client.on('messageCreate', async (message) => {
-
   if (!message.guild || message.author.bot) return;
-  if (channelsToIgnore && channelsToIgnore.includes(message.channelId)) return;
-  if (message.channelId == process.env.AI_SUPPORTCHANNEL_ID) return client.handleSupport(message);
-
-  /*
-  if (message.mentions.users.has(client.user)) {
-    const onlyMentioned = /^<@!?(\d+)>$/.test(message.content.trim()) && message.mentions.has(client.user);
-    if (onlyMentioned) {
-      return message.reply("👋 Hey! To use the AI support feature, please provide more context or ask a question after mentioning me.");
-    } else {
-      client.handleSupport(message);
-    }
+  if (channelsToIgnore?.includes(message.channelId)) return;
+  
+  // Handle AI support channel
+  if (message.channelId === process.env.AI_SUPPORTCHANNEL_ID) {
+    return client.handleSupport(message);
   }
-  */
 
-  let unitConversion = client.convertUnits(message.content);
-  if (unitConversion !== null) message.reply(unitConversion)
+  // Handle unit conversions
+  const unitConversion = client.convertUnits(message.content);
+  if (unitConversion) {
+    await message.reply(unitConversion).catch(error => {
+      console.error('[MESSAGE] Error sending unit conversion:', error.message);
+    });
+  }
 });
+
+/**
+ * Register slash commands with Discord
+ * @returns {Promise<void>}
+ */
 const registerCommands = async () => {
-  //if (client.githubToken) await client.fetchReleases();
+  if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID) {
+    console.error('[COMMAND] Missing required environment variables for command registration');
+    return;
+  }
 
   const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
   try {
-    console.log("Registering slash commands...");
+    console.log(`[COMMAND] Registering ${tempCommands.length} slash commands...`);
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
       body: tempCommands,
     });
-    console.log("Slash commands registered successfully!");
+    console.log("[COMMAND] Slash commands registered successfully!");
   } catch (error) {
-    console.error("Error registering slash commands:", error);
+    console.error("[COMMAND] Error registering slash commands:", error.message);
   }
 };
 
-client.login(process.env.DISCORD_TOKEN);
+// Graceful shutdown handling
+process.on('SIGINT', async () => {
+  console.log('[BOT] Received SIGINT, shutting down gracefully...');
+  try {
+    await redisClient.quit();
+    client.destroy();
+  } catch (error) {
+    console.error('[BOT] Error during shutdown:', error.message);
+  }
+  process.exit(0);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[BOT] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('[BOT] Uncaught Exception:', error);
+  process.exit(1);
+});
+
+client.login(process.env.DISCORD_TOKEN).catch(error => {
+  console.error('[BOT] Failed to login:', error.message);
+  process.exit(1);
+});

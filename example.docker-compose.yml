@@ -3,35 +3,67 @@ version: '3.8'
 services:
   redis:
     image: redis:7-alpine
-    container_name: redis
+    container_name: streamyfin-redis
     restart: unless-stopped
-    labels:
-      - com.centurylinklabs.watchtower.enable=false
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
+    networks:
+      - streamyfin-network
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
 
   streamyfin-discord-bot:
-    image: retardgerman/streamyfin-discord-bot:latest
-    environment:
-      - REDIS_URL=redis://redis:6379
-      - DISCORD_TOKEN=<your_discord_bot_token>
-      - CLIENT_ID=<your_discord_bot_client_id>
-      - GITHUB_TOKEN=<your_github_token>
-      - GITHUB_API_BASE=https://api.github.com
-      - REPO_ORG=<your_repo_org>
-      - REPO_NAME=<your_repo_name>
-      - FORUM_CHANNEL_ID=<your_forum_channel_id>
-      - PERSPECTIVE_APIKEY=<your_perspective_api_key>
-      - OLLAMA_URL=<your_ollama_url>
-      - PEOPLE_TO_TROLL=["id"]
-      - CHANNELS_TO_SKIP=["id"]
-      - MOD_LOG_CHANNEL_ID=1385279379436732467
-    labels:
-      - com.centurylinklabs.watchtower.enable=true
+    image: your-registry/streamyfin-discord-bot:latest
+    container_name: streamyfin-discord-bot
     restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+      - ENABLE_RSS_MONITORING=true
+      # Required - Replace with your actual values
+      - DISCORD_TOKEN=your_discord_bot_token
+      - CLIENT_ID=your_discord_client_id
+      - REPO_ORG=streamyfin
+      - REPO_NAME=streamyfin
+      # Optional - Configure as needed
+      - GITHUB_TOKEN=your_github_token
+      - GITHUB_API_BASE=https://api.github.com
+      - FORUM_CHANNEL_ID=your_forum_channel_id
+      - PERSPECTIVE_APIKEY=your_perspective_api_key
+      - AI_APIKEY=your_ai_api_key
+      - AI_SUPPRT_URL=your_ai_support_url
+      - AI_SUPPORTCHANNEL_ID=your_ai_support_channel_id
+      - MOD_LOG_CHANNEL_ID=your_mod_log_channel_id
+      - CHANNELS_TO_IGNORE=["channel_id_1", "channel_id_2"]
+    volumes:
+      - app_data:/app/data
+    networks:
+      - streamyfin-network
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+    healthcheck:
+      test: ["CMD", "node", "-e", "process.exit(0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+networks:
+  streamyfin-network:
+    driver: bridge
 
 volumes:
   redis_data:
+    driver: local
+  app_data:
+    driver: local
       
