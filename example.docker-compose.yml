@@ -38,7 +38,7 @@ services:
       - FORUM_CHANNEL_ID=your_forum_channel_id
       - PERSPECTIVE_APIKEY=your_perspective_api_key
       - AI_APIKEY=your_ai_api_key
-      - AI_SUPPRT_URL=your_ai_support_url
+      - AI_SUPPORT_URL=your_ai_support_url
       - AI_SUPPORTCHANNEL_ID=your_ai_support_channel_id
       - MOD_LOG_CHANNEL_ID=your_mod_log_channel_id
       - CHANNELS_TO_IGNORE=["channel_id_1", "channel_id_2"]

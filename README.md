@@ -143,7 +143,7 @@ npm run dev
 - `GITHUB_TOKEN` - GitHub Personal Access Token (enhances API limits)
 - `REDIS_URL` - Redis connection URL (default: redis://localhost:6379)
 - `AI_APIKEY` - API key for AI support features
-- `AI_SUPPRT_URL` - URL for AI support service
+- `AI_SUPPORT_URL` - URL for AI support service
 - `PERSPECTIVE_APIKEY` - Google Perspective API key for content moderation
 - `FORUM_CHANNEL_ID` - Discord forum channel for issue discussions
 - `MOD_LOG_CHANNEL_ID` - Channel for moderation logs

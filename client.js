@@ -232,14 +232,6 @@ export default class Streamyfin extends Client {
     
     this.userAIRateLimit.set(userID, now);
 
-    // Clean up old rate limit entries
-    if (this.userAIRateLimit.size > 1000) {
-      const cutoff = now - 60000; // 1 minute ago
-      for (const [id, timestamp] of this.userAIRateLimit.entries()) {
-        if (timestamp < cutoff) this.userAIRateLimit.delete(id);
-      }
-    }
-
     const typingInterval = setInterval(() => {
       message.channel.sendTyping().catch(() => clearInterval(typingInterval));
     }, 10000);

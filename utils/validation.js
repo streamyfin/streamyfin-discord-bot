@@ -41,7 +41,7 @@ export function validateEnvironment() {
     warnings.push('GITHUB_TOKEN not set - GitHub API functionality will be limited');
   }
   
-  if (!process.env.AI_APIKEY || !process.env.AI_SUPPRT_URL) {
+  if (!process.env.AI_APIKEY || !process.env.AI_SUPPORT_URL) {
     warnings.push('AI support not configured - AI features will be disabled');
   }
 
