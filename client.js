@@ -245,14 +245,15 @@ export default class Streamyfin extends Client {
     }, 10000);
 
     try {
-      if (!process.env.AI_SUPPRT_URL || !process.env.AI_APIKEY) {
+      const aiUrl = process.env.AI_SUPPORT_URL || process.env.AI_SUPPRT_URL;
+      if (!aiUrl || !process.env.AI_APIKEY) {
         throw new Error('AI support not configured');
       }
 
       await message.channel.sendTyping();
 
       const request = await axios.post(
-        `${process.env.AI_SUPPRT_URL}/query`,
+        `${aiUrl}/query`,
         { user_id: userID, query },
         {
           headers: { 'X-API-Key': process.env.AI_APIKEY },
@@ -301,8 +302,9 @@ export default class Streamyfin extends Client {
         const feedbackType = reaction.emoji.name === "👍" ? "positive" : "negative";
 
         try {
+          const aiUrl = process.env.AI_SUPPORT_URL || process.env.AI_SUPPRT_URL;
           await axios.post(
-            `${process.env.AI_SUPPRT_URL}/feedback`,
+            `${aiUrl}/feedback`,
             {
               user_id: userID,
               query,
