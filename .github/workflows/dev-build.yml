@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history to ensure we have all commits
 
       - name: Check for relevant code changes
         id: changes
@@ -25,11 +27,14 @@ jobs:
             echo "Manual trigger - building dev image"
           else
             git fetch origin codebase-rework || git fetch origin main
-            if git rev-parse ${{ github.event.before }} 2>/dev/null; then
+            # Check if we can access the before commit
+            if [ -n "${{ github.event.before }}" ] && git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
               CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
+              echo "Using commit range: ${{ github.event.before }}..${{ github.sha }}"
             else
-              # Fallback: diff last two commits if previous SHA is missing
-              CHANGED=$(git diff --name-only HEAD~1 HEAD)
+              # Fallback: diff last two commits if previous SHA is missing or inaccessible
+              CHANGED=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git show --name-only --format= HEAD)
+              echo "Using fallback: comparing HEAD~1..HEAD or showing HEAD changes"
             fi
             echo "Changed files:"
             echo "$CHANGED"
