@@ -11,6 +11,17 @@ export default class Streamyfin extends Client {
     this.repoName = process.env.REPO_NAME;
     this.githubToken = process.env.GITHUB_TOKEN;
     this.userAIRateLimit = new Map();
+    
+    // TTL cleanup for rate limiting (10 minutes)
+    this.rateLimitTTL = 10 * 60 * 1000;
+    this.rateLimitCleanupInterval = setInterval(() => {
+      const now = Date.now();
+      for (const [userId, timestamp] of this.userAIRateLimit) {
+        if (now - timestamp > this.rateLimitTTL) {
+          this.userAIRateLimit.delete(userId);
+        }
+      }
+    }, 5 * 60 * 1000); // Clean up every 5 minutes
 
     // Unit conversion mappings
     this.unitConversions = {
@@ -321,5 +332,16 @@ export default class Streamyfin extends Client {
     } catch (error) {
       console.error('[CLIENT] Error setting up feedback collector:', error.message);
     }
+  }
+
+  /**
+   * Clean up resources when destroying the client
+   */
+  destroy() {
+    if (this.rateLimitCleanupInterval) {
+      clearInterval(this.rateLimitCleanupInterval);
+      this.rateLimitCleanupInterval = null;
+    }
+    super.destroy();
   }
 }
