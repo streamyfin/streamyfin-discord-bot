@@ -38,7 +38,7 @@ jobs:
             fi
             echo "Changed files:"
             echo "$CHANGED"
-            if echo "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js|client\.js|package\.json|Dockerfile)'; then
+            if echo "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js|client\.js|package\.json|Dockerfile|\.github/workflows/)'; then
               echo "RELEVANT_CHANGES=true" >> $GITHUB_ENV
               echo "✅ Relevant code changes detected"
             else
