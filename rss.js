@@ -41,7 +41,10 @@ export default async function startRSS(client) {
  */
 async function processRSSFeeds(client) {
   try {
-    const keys = await redisClient.keys('monitor:*');
+    const keys = [];
+    for await (const batch of scanIterator('monitor:*')) {
+      keys.push(...batch);
+    }
     console.log(`[RSS] Processing ${keys.length} configured feeds`);
     
     for (const key of keys) {
@@ -163,16 +166,18 @@ async function fetchContent(type, url) {
         .replace(/^https:\/\/(www\.)?reddit\.com\/r\//, '')
         .replace(/\/$/, '');
       
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 10_000);
       const response = await fetch(
         `https://www.reddit.com/r/${subreddit}/new.json?limit=5`,
-        { 
-          headers: { 
+        {
+          headers: {
             "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)",
             "Accept": "application/json"
           },
-          timeout: 10000
+          signal: controller.signal
         }
-      );
+      ).finally(() => clearTimeout(t));
       
       if (!response.ok) {
         throw new Error(`Reddit API returned ${response.status}`);
@@ -191,32 +196,42 @@ async function fetchContent(type, url) {
   } catch (error) {
     console.error(`[RSS] Failed to fetch ${type} content from ${url}:`, error.message);
     return [];
-  }
-}
-
 /**
  * Clean up old Redis entries
  */
 async function cleanupOldEntries() {
   try {
     console.log('[RSS] Performing cleanup...');
-    const keys = await redisClient.keys('monitor:*:sent');
     let cleanedCount = 0;
-    
-    for (const key of keys) {
-      const ttl = await redisClient.ttl(key);
-      if (ttl === -1) { // No expiration set
-        await redisClient.expire(key, 60 * 60 * 24 * 7); // Set 7 day expiration
-        cleanedCount++;
+    for await (const batch of scanIterator('monitor:*:sent')) {
+      for (const key of batch) {
+        const ttl = await redisClient.ttl(key);
+        if (ttl === -1) { // No expiration set
+          await redisClient.expire(key, 60 * 60 * 24 * 7); // Set 7 day expiration
+          cleanedCount++;
+        }
       }
     }
-    
     if (cleanedCount > 0) {
       console.log(`[RSS] Set expiration on ${cleanedCount} keys`);
     }
   } catch (error) {
     console.error('[RSS] Error during cleanup:', error.message);
   }
+}
+    console.error('[RSS] Error during cleanup:', error.message);
+  }
+/**
+ * Scan Redis keys using an async iterator
+ * @param {string} pattern - Key pattern to match
+ */
+async function* scanIterator(pattern) {
+  let cursor = '0';
+  do {
+    const [next, keys] = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
+    cursor = next;
+    yield keys;
+  } while (cursor !== '0');
 }
 
 /**
@@ -225,6 +240,8 @@ async function cleanupOldEntries() {
  * @returns {Promise<void>}
  */
 function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 

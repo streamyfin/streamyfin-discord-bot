@@ -26,17 +26,19 @@ COPY . .
 # Run linting and validation (optional - can be disabled for faster builds)
 RUN npm run lint || echo "Linting failed but continuing build"
 
-FROM base AS production
+FROM node:22-alpine AS production
+WORKDIR /app
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
-
-# Install only production dependencies
-RUN npm ci --omit=dev && npm cache clean --force
-
-# Copy application files
+# Copy application files first
 COPY --from=build --chown=nodejs:nodejs /app .
+
+# Ensure production-only dependencies
+RUN rm -rf node_modules \
+  && npm ci --omit=dev \
+  && npm cache clean --force
 
 # Create data directory for logs and cache
 RUN mkdir -p /app/data && chown nodejs:nodejs /app/data

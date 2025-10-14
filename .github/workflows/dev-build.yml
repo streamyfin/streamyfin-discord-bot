@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - codebase-rework
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch: # Allow manual triggering
 
 permissions:
   contents: read
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch full history to ensure we have all commits
+          fetch-depth: 0 # Fetch full history to ensure we have all commits
 
       - name: Check for relevant code changes
         id: changes
@@ -68,13 +68,16 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract branch name
+      - name: Extract and sanitize branch name
         if: env.RELEVANT_CHANGES == 'true'
         shell: bash
         run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          echo "Building for branch: $BRANCH_NAME"
+          BRANCH_RAW="${{ github.ref_name }}"
+          # Docker tag charset: [A-Za-z0-9_.-], lower-case recommended; no slashes
+          BRANCH_SLUG="$(echo "$BRANCH_RAW" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g' | sed -E 's/^-+|-+$//g' | cut -c1-120)"
+          if [ -z "$BRANCH_SLUG" ]; then BRANCH_SLUG="unknown"; fi
+          echo "BRANCH_SLUG=$BRANCH_SLUG" >> $GITHUB_ENV
+          echo "Building for branch: $BRANCH_RAW (tag slug: $BRANCH_SLUG)"
 
       - name: Build and push Dev Docker image
         if: env.RELEVANT_CHANGES == 'true'
