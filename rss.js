@@ -15,7 +15,7 @@ const CLEANUP_THRESHOLD = 1000; // Clean up after this many keys
 let isShuttingDown = false;
 
 /**
- * Start RSS monitoring loop
+ * Start the RSS monitoring loop
  * @param {Client} client - Discord client instance
  */
 export default async function startRSS(client) {
@@ -43,7 +43,12 @@ async function processRSSFeeds(client) {
   try {
     const keys = [];
     for await (const batch of scanIterator('monitor:*')) {
-      keys.push(...batch);
+      // Filter out non-config keys (sent sets, lastCheck strings)
+      for (const key of batch) {
+        if (!key.includes(':sent') && !key.includes(':lastCheck')) {
+          keys.push(key);
+        }
+      }
     }
     console.log(`[RSS] Processing ${keys.length} configured feeds`);
     
@@ -196,6 +201,9 @@ async function fetchContent(type, url) {
   } catch (error) {
     console.error(`[RSS] Failed to fetch ${type} content from ${url}:`, error.message);
     return [];
+  }
+}
+
 /**
  * Clean up old Redis entries
  */
@@ -219,6 +227,7 @@ async function cleanupOldEntries() {
     console.error('[RSS] Error during cleanup:', error.message);
   }
 }
+
 /**
  * Scan Redis keys using an async iterator
  * @param {string} pattern - Key pattern to match
@@ -233,13 +242,11 @@ async function* scanIterator(pattern) {
 }
 
 /**
- * Sleep for specified milliseconds
+ * Sleep for the specified milliseconds
  * @param {number} ms - Milliseconds to sleep
  * @returns {Promise<void>}
  */
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
