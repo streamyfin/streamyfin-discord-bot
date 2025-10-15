@@ -219,8 +219,6 @@ async function cleanupOldEntries() {
     console.error('[RSS] Error during cleanup:', error.message);
   }
 }
-    console.error('[RSS] Error during cleanup:', error.message);
-  }
 /**
  * Scan Redis keys using an async iterator
  * @param {string} pattern - Key pattern to match
