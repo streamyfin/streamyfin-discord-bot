@@ -97,7 +97,13 @@ client.on("ready", async () => {
   await loadCommands();
   console.log(`[COMMAND] Loaded ${tempCommands.length} commands`);
   logActivity('info', `Loaded ${tempCommands.length} commands`);
-  await registerCommands();
+  
+  // Only register commands if we have them and proper environment
+  if (tempCommands.length > 0 && process.env.DISCORD_TOKEN && process.env.CLIENT_ID) {
+    await registerCommands();
+  } else {
+    console.warn('[COMMAND] Skipping command registration - missing token or client ID');
+  }
   
   // Start RSS monitoring if configured
   if (process.env.ENABLE_RSS_MONITORING === 'true') {
@@ -284,14 +290,17 @@ const registerCommands = async () => {
       body: tempCommands,
     });
     console.log("[COMMAND] Slash commands registered successfully!");
+    logActivity('info', 'Slash commands registered successfully');
   } catch (error) {
     console.error("[COMMAND] Error registering slash commands:", error.message);
+    logActivity('error', 'Failed to register slash commands', { error: error.message });
   }
 };
 
 // Graceful shutdown handling
 process.on('SIGINT', async () => {
   console.log('[BOT] Received SIGINT, shutting down gracefully...');
+  logActivity('info', 'Bot shutdown initiated');
   try {
     await redisClient.quit();
     client.destroy();
@@ -303,14 +312,28 @@ process.on('SIGINT', async () => {
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('[BOT] Unhandled Rejection at:', promise, 'reason:', reason);
+  logActivity('error', 'Unhandled rejection', { reason: reason?.message || reason });
 });
 
 process.on('uncaughtException', (error) => {
   console.error('[BOT] Uncaught Exception:', error);
+  logActivity('error', 'Uncaught exception', { error: error.message });
   process.exit(1);
 });
 
-client.login(process.env.DISCORD_TOKEN).catch(error => {
-  console.error('[BOT] Failed to login:', error.message);
-  process.exit(1);
-});
+// Start Discord bot if token is provided
+if (process.env.DISCORD_TOKEN) {
+  client.login(process.env.DISCORD_TOKEN).catch(error => {
+    console.error('[BOT] Failed to login:', error.message);
+    logActivity('error', 'Failed to login to Discord', { error: error.message });
+  });
+} else {
+  console.warn('[BOT] No Discord token provided, starting in web panel only mode');
+  logActivity('warn', 'Starting without Discord connection - web panel only');
+  
+  // Still start web panel even without Discord
+  if (process.env.ENABLE_WEB_PANEL === 'true') {
+    const { startWebPanel } = await import('./web-panel.js');
+    startWebPanel();
+  }
+}

@@ -218,6 +218,48 @@
     </div>
     
     <script>
+        // Authentication handling
+        let authHeader = null;
+        
+        // Prompt for authentication if needed
+        function setupAuth() {
+            const savedAuth = localStorage.getItem('webPanelAuth');
+            if (savedAuth) {
+                authHeader = savedAuth;
+                return true;
+            }
+            
+            const password = prompt('Enter web panel password:');
+            if (password) {
+                authHeader = 'Basic ' + btoa('admin:' + password);
+                localStorage.setItem('webPanelAuth', authHeader);
+                return true;
+            }
+            return false;
+        }
+        
+        // Enhanced fetch with authentication
+        async function authenticatedFetch(url) {
+            const headers = {};
+            if (authHeader) {
+                headers.Authorization = authHeader;
+            }
+            
+            const response = await fetch(url, { headers });
+            
+            if (response.status === 401) {
+                localStorage.removeItem('webPanelAuth');
+                authHeader = null;
+                if (setupAuth()) {
+                    return authenticatedFetch(url);
+                } else {
+                    throw new Error('Authentication required');
+                }
+            }
+            
+            return response;
+        }
+        
         // Utility functions
         function formatUptime(seconds) {
             const days = Math.floor(seconds / 86400);
@@ -236,7 +278,7 @@
         // Load dashboard stats
         async function loadStats() {
             try {
-                const response = await fetch('/api/stats');
+                const response = await authenticatedFetch('/api/stats');
                 const data = await response.json();
                 
                 document.getElementById('status').innerHTML = 
@@ -256,7 +298,7 @@
         // Load command usage
         async function loadCommands() {
             try {
-                const response = await fetch('/api/commands');
+                const response = await authenticatedFetch('/api/commands');
                 const commands = await response.json();
                 
                 const container = document.getElementById('command-list');
@@ -281,7 +323,7 @@
         // Load RSS feeds
         async function loadRSSFeeds() {
             try {
-                const response = await fetch('/api/rss');
+                const response = await authenticatedFetch('/api/rss');
                 const feeds = await response.json();
                 
                 const container = document.getElementById('rss-list');
@@ -308,7 +350,7 @@
         // Load recent logs
         async function loadLogs() {
             try {
-                const response = await fetch('/api/logs?limit=50');
+                const response = await authenticatedFetch('/api/logs?limit=50');
                 const logs = await response.json();
                 
                 const container = document.getElementById('log-container');
@@ -336,13 +378,17 @@
         
         // Initialize dashboard
         function init() {
-            loadStats();
-            loadCommands();
-            loadRSSFeeds();
-            loadLogs();
-            
-            // Auto-refresh every 30 seconds
-            setInterval(loadStats, 30000);
+            if (setupAuth()) {
+                loadStats();
+                loadCommands();
+                loadRSSFeeds();
+                loadLogs();
+                
+                // Auto-refresh every 30 seconds
+                setInterval(loadStats, 30000);
+            } else {
+                document.body.innerHTML = '<div style="text-align: center; padding: 2rem; color: #ef4444;">Authentication cancelled. Please refresh to try again.</div>';
+            }
         }
         
         // Start when page loads
