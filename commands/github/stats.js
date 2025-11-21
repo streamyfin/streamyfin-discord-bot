@@ -84,7 +84,7 @@ export default {
 async function fetchRepoInfo() {
     try {
         const response = await axios.get("https://api.github.com/repos/streamyfin/streamyfin", {
-            timeout: 10000,
+            timeout: 30000,
             headers: {
                 'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)',
                 'Accept': 'application/vnd.github.v3+json'

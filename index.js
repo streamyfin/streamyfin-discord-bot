@@ -142,6 +142,12 @@ async function handleCommandInteraction(interaction) {
   const command = client.commands.get(interaction.commandName);
   if (!command) {
     console.warn(`[INTERACTION] Unknown command: ${interaction.commandName}`);
+    if (interaction.isRepliable() && !interaction.replied) {
+      await interaction.reply({
+        content: 'Unknown interaction',
+        flags: MessageFlags.Ephemeral,
+      }).catch(() => {});
+    }
     return;
   }
 

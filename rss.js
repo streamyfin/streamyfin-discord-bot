@@ -6,7 +6,7 @@ const rssParser = new Parser({
     "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)",
     "Accept": "application/rss+xml, application/xml, text/xml"
   },
-  timeout: 10000,
+  timeout: 30000,
   maxRedirects: 5,
 });
 
@@ -92,13 +92,21 @@ async function processSingleFeed(client, key) {
     return; // Too soon to check again
   }
 
-  await redisClient.set(lastCheckKey, now);
+  let items;
+  try {
+    items = await fetchContent(guildConfig.type, guildConfig.url);
+  } catch (error) {
+    console.error(`[RSS] Error fetching content for ${key}:`, error.message);
+    return; // Don't update timestamp on fetch failure
+  }
   
-  const items = await fetchContent(guildConfig.type, guildConfig.url);
   if (!items?.length) {
     console.log(`[RSS] No new items for ${key}`);
-    return;
+    return; // Don't update timestamp when no items
   }
+
+  // Only update timestamp after successful fetch with items
+  await redisClient.set(lastCheckKey, now);
 
   const sentIdsKey = `${key}:sent`;
   await ensureSetKey(sentIdsKey);

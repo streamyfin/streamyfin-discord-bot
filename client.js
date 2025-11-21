@@ -109,7 +109,7 @@ export default class Streamyfin extends Client {
     try {
       const url = `https://api.github.com/repos/streamyfin/streamyfin/contributors?anon=1`;
       const response = await axios.get(url, {
-        timeout: 10000,
+        timeout: 30000,
         headers: {
           'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)'
         }
@@ -138,7 +138,7 @@ export default class Streamyfin extends Client {
             Authorization: `token ${this.githubToken}`,
             'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)'
           },
-          timeout: 10000,
+          timeout: 30000,
         }
       );
 
@@ -166,7 +166,7 @@ export default class Streamyfin extends Client {
       const response = await axios.get(
         `https://api.github.com/repos/${this.repoOrg}/${sanitizedRepoName}`,
         {
-          timeout: 10000,
+          timeout: 30000,
           headers: {
             'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)'
           }
@@ -199,7 +199,7 @@ export default class Streamyfin extends Client {
           requestedAttributes: { TOXICITY: {}, FLIRTATION: {} },
         },
         {
-          timeout: 10000,
+          timeout: 30000,
           headers: {
             'Content-Type': 'application/json'
           }
@@ -316,7 +316,7 @@ export default class Streamyfin extends Client {
             },
             {
               headers: { 'X-API-Key': process.env.AI_APIKEY },
-              timeout: 10000,
+              timeout: 30000,
             }
           );
 
