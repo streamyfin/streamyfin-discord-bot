@@ -9,6 +9,7 @@ import fs from 'fs';
 import redisClient from './redisClient.js';
 import startRSS from './rss.js';
 import { validateEnvironment, setEnvironmentDefaults, logValidationResults } from './utils/validation.js';
+import { startWebPanel, incrementCommandCount, incrementErrorCount, logActivity } from './web-panel.js';
 
 // Validate environment before starting
 const validation = validateEnvironment();
@@ -89,20 +90,27 @@ async function loadCommands() {
 
 client.on("ready", async () => {
   console.log(`[BOT] ${client.user.tag} is ready!`);
+  logActivity('info', 'Bot started successfully', { tag: client.user.tag });
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
   
   // Load commands and register them
   await loadCommands();
   console.log(`[COMMAND] Loaded ${tempCommands.length} commands`);
+  logActivity('info', `Loaded ${tempCommands.length} commands`);
   await registerCommands();
   
   // Start RSS monitoring if configured
   if (process.env.ENABLE_RSS_MONITORING === 'true') {
     console.log('[RSS] Starting RSS monitoring...');
+    logActivity('info', 'Starting RSS monitoring');
     startRSS(client).catch(error => {
       console.error('[RSS] RSS monitoring error:', error.message);
+      logActivity('error', 'RSS monitoring error', { error: error.message });
     });
   }
+  
+  // Start web panel if configured
+  startWebPanel();
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -153,8 +161,18 @@ async function handleCommandInteraction(interaction) {
 
   try {
     await command.run(interaction);
+    incrementCommandCount(interaction.commandName);
+    logActivity('info', `Command executed: ${interaction.commandName}`, { 
+      user: interaction.user.tag,
+      guild: interaction.guild?.name 
+    });
   } catch (error) {
     console.error(`[INTERACTION] Error executing ${interaction.commandName}:`, error.message);
+    incrementErrorCount();
+    logActivity('error', `Command error: ${interaction.commandName}`, { 
+      error: error.message,
+      user: interaction.user.tag 
+    });
     
     const errorMessage = {
       content: 'There was an error while executing this command!',

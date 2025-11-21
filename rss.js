@@ -1,5 +1,6 @@
 import redisClient from "./redisClient.js";
 import Parser from 'rss-parser';
+import { incrementRSSCount, logActivity } from './web-panel.js';
 
 const rssParser = new Parser({
   headers: { 
@@ -129,6 +130,7 @@ async function processSingleFeed(client, key) {
         
         await redisClient.sAdd(sentIdsKey, uniqueId);
         await redisClient.expire(sentIdsKey, 60 * 60 * 24 * 7); // 7 days
+        incrementRSSCount();
         newItemsCount++;
       }
     } catch (error) {
@@ -138,6 +140,11 @@ async function processSingleFeed(client, key) {
   
   if (newItemsCount > 0) {
     console.log(`[RSS] Sent ${newItemsCount} new items for ${key}`);
+    logActivity('info', `RSS: Sent ${newItemsCount} new items`, { 
+      feedKey: key, 
+      feedType: guildConfig.type,
+      channelId: guildConfig.channelId 
+    });
   }
 }
 
