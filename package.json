@@ -5,6 +5,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
+    "dashboard": "cd web-dashboard && npm run dev",
+    "dev-all": "concurrently \"npm run dev\" \"npm run dashboard\"",
+    "start-all": "concurrently \"npm start\" \"cd web-dashboard && npm start\"",
     "lint": "eslint . --ext .js --ignore-path .gitignore",
     "lint:fix": "eslint . --ext .js --ignore-path .gitignore --fix",
     "test": "echo \"Tests not implemented yet\" && exit 0",
@@ -41,6 +44,7 @@
     "@semantic-release/github": "^11.0.3",
     "@semantic-release/npm": "^12.0.1",
     "@semantic-release/release-notes-generator": "^14.0.3",
+    "concurrently": "^9.2.1",
     "conventional-changelog-angular": "^8.0.0",
     "conventional-changelog-cli": "^5.0.0",
     "husky": "^9.1.7",

@@ -93,6 +93,14 @@ client.on("ready", async () => {
   logActivity('info', 'Bot started successfully', { tag: client.user.tag });
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
   
+  // Store bot start time in Redis
+  try {
+    await redisClient.set('bot:startTime', Date.now().toString());
+    await redisClient.set('bot:status', 'online');
+  } catch (redisError) {
+    console.warn('[BOT] Failed to store start time in Redis:', redisError.message);
+  }
+  
   // Load commands and register them
   await loadCommands();
   console.log(`[COMMAND] Loaded ${tempCommands.length} commands`);

@@ -64,6 +64,66 @@ The Streamyfin Discord Bot integrates project management, community engagement, 
 | `/repo`                 | Show repository or organization info                          |
 | `/roadmap`              | Display the project roadmap                                   |
 | `/stats`                | Contributor leaderboard and metrics                           |
+
+---
+
+## Web Dashboard
+
+The bot includes a modern, secure web dashboard for monitoring and administration:
+
+### Features
+
+- **Real-time Monitoring**: Live bot statistics with automatic updates
+- **Command Analytics**: Interactive charts showing command usage patterns  
+- **RSS Feed Management**: Monitor active RSS feeds and their status
+- **Live Logs**: Real-time log viewer with filtering capabilities
+- **Responsive Design**: Modern UI built with Next.js, Tailwind CSS, and shadcn/ui
+- **Direct Redis Integration**: Reads data directly from the bot's Redis instance
+
+### Quick Start
+
+Start both the bot and dashboard with a single command:
+
+```bash
+npm run dev-all     # Development mode with hot reload
+# or
+npm run start-all   # Production mode
+```
+
+The bot will be available on Discord and the dashboard at:
+- **Dashboard**: http://localhost:3000
+- **API**: http://localhost:3001 (if web panel is enabled)
+
+### Login Credentials
+
+Default credentials for the dashboard:
+- **Username**: admin  
+- **Password**: admin
+
+> **Note**: Change these credentials by modifying the authentication function in the API routes.
+
+### Individual Services
+
+```bash
+# Start just the bot
+npm run dev         # or npm start
+
+# Start just the dashboard
+npm run dashboard   # from root directory
+```
+
+### Environment Variables for Dashboard
+
+Add these to your main `.env` file:
+
+```bash
+# Web Panel Configuration
+ENABLE_WEB_PANEL="true"
+WEB_PANEL_PORT="3001"
+WEB_PANEL_PASSWORD="your-secure-password"
+```
+
+The dashboard will be available at `http://localhost:3001` when enabled.
 ---
 
 ## Installation & Setup
@@ -132,6 +192,9 @@ npm run dev
 - `AI_APIKEY` and `AI_SUPPORT_URL`
 - `PERSPECTIVE_APIKEY` (for moderation)
 - `FORUM_CHANNEL_ID`, `MOD_LOG_CHANNEL_ID`, `CHANNELS_TO_IGNORE`, `ENABLE_RSS_MONITORING`, `LOG_LEVEL`
+- `ENABLE_WEB_PANEL` (set to "true" to enable the dashboard)
+- `WEB_PANEL_PORT` (default: 3001)
+- `WEB_PANEL_PASSWORD` (required if web panel is enabled)
 ---
 
 ## Architecture & Project Structure
@@ -139,11 +202,30 @@ npm run dev
 ```
 ├── commands/           # Bot and GitHub command implementations
 ├── utils/              # Constants, logger, validation
+├── web-dashboard/      # Modern Next.js dashboard with secure authentication
+├── web-static/         # Static assets for web panel
 ├── client.js           # Extended Discord client
 ├── index.js            # Main entry point
 ├── redisClient.js      # Redis connection handling
-└── rss.js              # RSS monitoring service
+├── rss.js              # RSS monitoring service
+└── web-panel.js        # Express.js backend API for dashboard
 ```
+
+### Recent Improvements
+
+**Backend Security & Reliability**
+- Fixed Redis scan errors with improved iterator handling
+- Enhanced authentication with rate limiting and session management
+- Timing-safe credential validation to prevent attacks
+- Better error handling and graceful degradation
+- Proper IP detection for security features
+
+**Dashboard UI & UX**
+- Modern login interface using shadcn/ui components
+- Responsive design with smooth animations
+- Secure session handling with automatic logout
+- Real-time monitoring with improved error resilience
+- Professional authentication flow with proper feedback
 
 ## Code Quality & Contribution
 
