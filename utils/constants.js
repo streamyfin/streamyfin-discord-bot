@@ -6,7 +6,7 @@ export const CONFIG = {
   // Bot configuration
   BOT: {
     USER_ID: '398161771476549654',
-    ACTIVITY: "over Streamyfin's issues 👀",
+    ACTIVITY: 'over Streamyfin\'s issues 👀',
     ACTIVITY_TYPE: 3, // Watching
   },
 
@@ -38,7 +38,7 @@ export const CONFIG = {
   MODERATION: {
     TOXICITY_THRESHOLD: 0.2,
     FLIRTATION_THRESHOLD: 0.2,
-    COMMENT_PREFIXES: ["^", "//", "-"],
+    COMMENT_PREFIXES: ['^', '//', '-'],
     MIN_QUERY_LENGTH: 5,
   },
 
@@ -82,10 +82,10 @@ export const MESSAGES = {
   },
 
   FEEDBACK: {
-    POSITIVE: "Thanks for the feedback! I'm glad you found the answer helpful.",
-    NEGATIVE: "Sorry for the dissatisfaction. I'll work on improving the answer.",
-    AI_SUPPORT_PROMPT: "Please provide a question or query for support.",
-    AI_TECHNICAL_DIFFICULTY: "Sorry, I'm experiencing technical difficulties. Please try again later.",
+    POSITIVE: 'Thanks for the feedback! I\'m glad you found the answer helpful.',
+    NEGATIVE: 'Sorry for the dissatisfaction. I\'ll work on improving the answer.',
+    AI_SUPPORT_PROMPT: 'Please provide a question or query for support.',
+    AI_TECHNICAL_DIFFICULTY: 'Sorry, I\'m experiencing technical difficulties. Please try again later.',
   }
 };
 

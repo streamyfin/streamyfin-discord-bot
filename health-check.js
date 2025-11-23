@@ -6,7 +6,6 @@
  */
 
 import { promises as fs } from 'fs';
-import process from 'process';
 
 const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds
 

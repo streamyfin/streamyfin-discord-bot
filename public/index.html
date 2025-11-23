@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streamyfin Discord Bot Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎵 Streamyfin Discord Bot</h1>
+      <p>Dashboard & Monitoring Panel</p>
+    </div>
+    
+    <div class="dashboard">
+      <div class="card">
+        <h3><span class="emoji">📊</span> Bot Statistics</h3>
+        <button class="refresh-btn" onclick="loadStats()">Refresh Stats</button>
+        <div id="stats-content">
+          <div class="loading">Loading statistics...</div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3><span class="emoji">🤖</span> Commands Usage</h3>
+        <button class="refresh-btn" onclick="loadCommands()">Refresh Commands</button>
+        <div id="commands-content">
+          <div class="loading">Loading commands...</div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3><span class="emoji">📡</span> RSS Feeds</h3>
+        <button class="refresh-btn" onclick="loadRSS()">Refresh RSS</button>
+        <div id="rss-content">
+          <div class="loading">Loading RSS feeds...</div>
+        </div>
+      </div>
+      
+      <div class="card">
+        <h3><span class="emoji">📋</span> Recent Logs</h3>
+        <button class="refresh-btn" onclick="loadLogs()">Refresh Logs</button>
+        <div id="logs-content">
+          <div class="loading">Loading logs...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

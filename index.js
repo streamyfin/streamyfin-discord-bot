@@ -10,10 +10,32 @@ import redisClient from './redisClient.js';
 import startRSS from './rss.js';
 import { validateEnvironment, setEnvironmentDefaults, logValidationResults } from './utils/validation.js';
 import { startWebPanel, incrementCommandCount, incrementErrorCount, logActivity } from './web-panel.js';
+import { handleError, createErrorResponse } from './utils/errorHandler.js';
+import monitor from './utils/monitor.js';
+import { applyProductionDefaults, validateProductionEnvironment } from './utils/production.js';
+import Logger from './utils/logger.js';
 
-// Validate environment before starting
+// Initialize logger
+const logger = new Logger('MAIN');
+
+// Apply production defaults and validate environment
+applyProductionDefaults();
 const validation = validateEnvironment();
 logValidationResults(validation);
+
+// Additional production environment validation
+if (process.env.NODE_ENV === 'production') {
+  const prodValidation = validateProductionEnvironment();
+  if (!prodValidation.isValid) {
+    logger.error('Production environment validation failed');
+    prodValidation.errors.forEach(error => logger.error(error));
+    process.exit(1);
+  }
+  if (prodValidation.warnings.length > 0) {
+    prodValidation.warnings.forEach(warning => logger.warn(warning));
+  }
+}
+
 setEnvironmentDefaults();
 
 const tempCommands = [];
@@ -27,7 +49,7 @@ function parseChannelsToIgnore() {
     if (!process.env.CHANNELS_TO_IGNORE) return null;
     const channels = JSON.parse(process.env.CHANNELS_TO_IGNORE);
     return Array.isArray(channels) ? channels.map(String) : null;
-  } catch (error) {
+  } catch (_error) {
     console.warn('Invalid CHANNELS_TO_IGNORE format, ignoring setting');
     return null;
   }
@@ -88,10 +110,10 @@ async function loadCommands() {
   }
 }
 
-client.on("ready", async () => {
+client.on('ready', async () => {
   console.log(`[BOT] ${client.user.tag} is ready!`);
   logActivity('info', 'Bot started successfully', { tag: client.user.tag });
-  client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
+  client.user.setActivity('over Streamyfin\'s issues 👀', { type: 3 });
   
   // Store bot start time in Redis
   try {
@@ -110,16 +132,17 @@ client.on("ready", async () => {
   if (tempCommands.length > 0 && process.env.DISCORD_TOKEN && process.env.CLIENT_ID) {
     await registerCommands();
   } else {
-    console.warn('[COMMAND] Skipping command registration - missing token or client ID');
+    logger.warn('Skipping command registration - missing token or client ID');
   }
   
   // Start RSS monitoring if configured
   if (process.env.ENABLE_RSS_MONITORING === 'true') {
-    console.log('[RSS] Starting RSS monitoring...');
+    logger.info('Starting RSS monitoring...');
     logActivity('info', 'Starting RSS monitoring');
     startRSS(client).catch(error => {
-      console.error('[RSS] RSS monitoring error:', error.message);
+      logger.error('RSS monitoring error:', error);
       logActivity('error', 'RSS monitoring error', { error: error.message });
+      monitor.recordError('rss_monitoring');
     });
   }
   
@@ -127,7 +150,7 @@ client.on("ready", async () => {
   startWebPanel();
 });
 
-client.on("interactionCreate", async (interaction) => {
+client.on('interactionCreate', async (interaction) => {
   // Ignore interactions from ignored channels, but send an ephemeral reply
   if (channelsToIgnore?.includes(interaction.channelId)) {
     if (interaction.isRepliable()) {
@@ -176,27 +199,25 @@ async function handleCommandInteraction(interaction) {
   try {
     await command.run(interaction);
     incrementCommandCount(interaction.commandName);
+    monitor.recordCommand(interaction.commandName);
     logActivity('info', `Command executed: ${interaction.commandName}`, { 
       user: interaction.user.tag,
       guild: interaction.guild?.name 
     });
   } catch (error) {
-    console.error(`[INTERACTION] Error executing ${interaction.commandName}:`, error.message);
+    const errorResponse = createErrorResponse(error, `Command: ${interaction.commandName}`);
+    monitor.recordError('command_execution');
     incrementErrorCount();
+    
     logActivity('error', `Command error: ${interaction.commandName}`, { 
       error: error.message,
       user: interaction.user.tag 
     });
     
-    const errorMessage = {
-      content: 'There was an error while executing this command!',
-      flags: MessageFlags.Ephemeral,
-    };
-
     if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(errorMessage).catch(() => {});
+      await interaction.followUp(errorResponse).catch(() => {});
     } else {
-      await interaction.reply(errorMessage).catch(() => {});
+      await interaction.reply(errorResponse).catch(() => {});
     }
   }
 }
@@ -290,42 +311,45 @@ const registerCommands = async () => {
     return;
   }
 
-  const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
+  const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
   try {
     console.log(`[COMMAND] Registering ${tempCommands.length} slash commands...`);
     await rest.put(Routes.applicationCommands(process.env.CLIENT_ID), {
       body: tempCommands,
     });
-    console.log("[COMMAND] Slash commands registered successfully!");
+    console.log('[COMMAND] Slash commands registered successfully!');
     logActivity('info', 'Slash commands registered successfully');
   } catch (error) {
-    console.error("[COMMAND] Error registering slash commands:", error.message);
+    console.error('[COMMAND] Error registering slash commands:', error.message);
     logActivity('error', 'Failed to register slash commands', { error: error.message });
   }
 };
 
 // Graceful shutdown handling
 process.on('SIGINT', async () => {
-  console.log('[BOT] Received SIGINT, shutting down gracefully...');
+  logger.info('Received SIGINT, shutting down gracefully...');
   logActivity('info', 'Bot shutdown initiated');
   try {
+    monitor.destroy();
     await redisClient.quit();
     client.destroy();
   } catch (error) {
-    console.error('[BOT] Error during shutdown:', error.message);
+    logger.error('Error during shutdown:', error);
   }
   process.exit(0);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[BOT] Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error('Unhandled Rejection at:', { promise, reason: reason?.message || reason });
   logActivity('error', 'Unhandled rejection', { reason: reason?.message || reason });
+  monitor.recordError('unhandled_rejection');
 });
 
 process.on('uncaughtException', (error) => {
-  console.error('[BOT] Uncaught Exception:', error);
+  logger.error('Uncaught Exception:', error);
   logActivity('error', 'Uncaught exception', { error: error.message });
+  monitor.recordError('uncaught_exception');
   process.exit(1);
 });
 

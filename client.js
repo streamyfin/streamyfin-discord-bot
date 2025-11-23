@@ -85,7 +85,7 @@ export default class Streamyfin extends Client {
       }
     }
     
-    return results.length > 0 ? "Unit conversion:\n" + results.join("\n") : null;
+    return results.length > 0 ? `Unit conversion:\n${  results.join('\n')}` : null;
   }
 
   /**
@@ -107,7 +107,7 @@ export default class Streamyfin extends Client {
    */
   async fetchStats() {
     try {
-      const url = `https://api.github.com/repos/streamyfin/streamyfin/contributors?anon=1`;
+      const url = 'https://api.github.com/repos/streamyfin/streamyfin/contributors?anon=1';
       const response = await axios.get(url, {
         timeout: 30000,
         headers: {
@@ -146,11 +146,11 @@ export default class Streamyfin extends Client {
         .slice(0, 2)
         .map((release) => ({ name: release.name, value: release.name }));
 
-      releases.push({ name: "Older", value: "Older" });
+      releases.push({ name: 'Older', value: 'Older' });
       return releases;
     } catch (error) {
       console.error('[CLIENT] Error fetching releases:', error.message);
-      return [{ name: "unknown", value: "unknown" }];
+      return [{ name: 'unknown', value: 'unknown' }];
     }
   }
 
@@ -235,10 +235,10 @@ export default class Streamyfin extends Client {
     }
     
     // Basic validation
-    const messageComments = ["^", "//", "-"];
+    const messageComments = ['^', '//', '-'];
     if (messageComments.some(prefix => query.startsWith(prefix))) return;
     if (!query || query.length < 5) {
-      return message.reply("Please provide a question or query for support.").catch(() => {});
+      return message.reply('Please provide a question or query for support.').catch(() => {});
     }
     
     this.userAIRateLimit.set(userID, now);
@@ -270,11 +270,11 @@ export default class Streamyfin extends Client {
         const sentMessage = await message.reply(response);
         await this.setupFeedbackCollector(sentMessage, userID, query, response);
       } else {
-        await message.reply("Sorry, I couldn't find an answer to your question.");
+        await message.reply('Sorry, I couldn\'t find an answer to your question.');
       }
     } catch (error) {
       console.error('[CLIENT] AI Support error:', error.message);
-      await message.reply("Sorry, I'm experiencing technical difficulties. Please try again later.").catch(() => {});
+      await message.reply('Sorry, I\'m experiencing technical difficulties. Please try again later.').catch(() => {});
     } finally {
       clearInterval(typingInterval);
     }
@@ -289,11 +289,11 @@ export default class Streamyfin extends Client {
    */
   async setupFeedbackCollector(sentMessage, userID, query, response) {
     try {
-      await sentMessage.react("👍");
-      await sentMessage.react("👎");
+      await sentMessage.react('👍');
+      await sentMessage.react('👎');
 
       const filter = (reaction, user) => 
-        ["👍", "👎"].includes(reaction.emoji.name) && user.id === userID;
+        ['👍', '👎'].includes(reaction.emoji.name) && user.id === userID;
 
       const collector = sentMessage.createReactionCollector({ 
         filter, 
@@ -301,8 +301,8 @@ export default class Streamyfin extends Client {
         time: 180000 
       });
 
-      collector.on("collect", async (reaction) => {
-        const feedbackType = reaction.emoji.name === "👍" ? "positive" : "negative";
+      collector.on('collect', async (reaction) => {
+        const feedbackType = reaction.emoji.name === '👍' ? 'positive' : 'negative';
 
         try {
           const aiUrl = process.env.AI_SUPPORT_URL || process.env.AI_SUPPRT_URL;
@@ -320,9 +320,9 @@ export default class Streamyfin extends Client {
             }
           );
 
-          const feedbackMessage = feedbackType === "positive" 
-            ? "Thanks for the feedback! I'm glad you found the answer helpful."
-            : "Sorry for the dissatisfaction. I'll work on improving the answer.";
+          const feedbackMessage = feedbackType === 'positive' 
+            ? 'Thanks for the feedback! I\'m glad you found the answer helpful.'
+            : 'Sorry for the dissatisfaction. I\'ll work on improving the answer.';
           
           await sentMessage.reply(feedbackMessage);
         } catch (err) {

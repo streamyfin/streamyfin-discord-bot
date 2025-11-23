@@ -144,6 +144,8 @@ cp .env.docker .env   # Edit this file for your configuration
 ./docker-manage.sh start
 ```
 
+The dashboard will be available at http://localhost:3000 after starting.
+
 Additional Docker management commands:
 
 ```bash
@@ -167,6 +169,11 @@ npm install
 docker run -d -p 6379:6379 redis:7-alpine   # Or install Redis locally
 cp .env.example .env    # Edit this file with your config
 npm run validate
+
+# Start bot with dashboard
+npm run dashboard       # Builds dashboard and starts bot on port 3000
+
+# Or start bot only
 npm start
 ```
 
@@ -174,7 +181,7 @@ npm start
 
 ```bash
 npm run dev
-./docker-manage.sh dev
+# Dashboard available separately on: npm run dashboard
 ```
 ---
 

@@ -8,10 +8,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.WEB_PANEL_PORT || 3001;
+const PORT = process.env.WEB_PANEL_PORT || 3000;
 
 // Store stats in memory for quick access
-let botStats = {
+const botStats = {
   startTime: Date.now(),
   commandsExecuted: 0,
   errorsCount: 0,
@@ -29,19 +29,13 @@ const loginAttempts = new Map(); // IP -> { count, firstAttempt }
 // Middleware
 app.use(express.json());
 
-// Serve Next.js dashboard in production, or redirect to dev server
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'web-dashboard', '.next', 'standalone')));
-} else {
-  // In development, serve the API only - dashboard runs separately
-  app.get('/', (req, res) => {
-    res.json({ 
-      message: 'Streamyfin Discord Bot API', 
-      dashboard: 'http://localhost:3000',
-      api: 'http://localhost:3001/api' 
-    });
-  });
-}
+// Serve static files for dashboard
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Serve dashboard HTML as static file
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Trust proxy for proper IP detection
 app.set('trust proxy', true);
@@ -58,15 +52,15 @@ function basicAuth(req, res, next) {
   
   const clientIP = req.realIP;
   
-  // Check rate limiting
-  if (isRateLimited(clientIP)) {
-    return res.status(429).json({ 
-      error: 'Too many login attempts. Please try again later.' 
-    });
-  }
-  
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Basic ')) {
+    // Check rate limiting only when authentication is missing
+    if (isRateLimited(clientIP)) {
+      return res.status(429).json({ 
+        error: 'Too many failed login attempts. Please try again later.' 
+      });
+    }
+    
     recordLoginAttempt(clientIP, false);
     res.status(401).set('WWW-Authenticate', 'Basic realm="Bot Panel"').json({ 
       error: 'Authentication required' 
@@ -93,7 +87,7 @@ function basicAuth(req, res, next) {
     );
     
     if (usernameValid && passwordValid && username.length === expectedUsername.length) {
-      // Successful login
+      // Successful login - clear any failed attempts for this IP
       recordLoginAttempt(clientIP, true);
       
       // Create/update session
@@ -111,6 +105,13 @@ function basicAuth(req, res, next) {
       req.sessionId = sessionId;
       next();
     } else {
+      // Check rate limiting only on failed authentication attempts
+      if (isRateLimited(clientIP)) {
+        return res.status(429).json({ 
+          error: 'Too many failed login attempts. Please try again later.' 
+        });
+      }
+      
       // Failed login
       recordLoginAttempt(clientIP, false);
       
@@ -120,6 +121,13 @@ function basicAuth(req, res, next) {
       }, 1000 + Math.random() * 1000);
     }
   } catch (error) {
+    // Check rate limiting only on authentication errors
+    if (isRateLimited(clientIP)) {
+      return res.status(429).json({ 
+        error: 'Too many failed login attempts. Please try again later.' 
+      });
+    }
+    
     recordLoginAttempt(clientIP, false);
     res.status(401).json({ error: 'Invalid authentication format' });
   }
@@ -150,6 +158,7 @@ function recordLoginAttempt(ip, success) {
     return;
   }
   
+  // Only record failed authentication attempts
   const attempts = loginAttempts.get(ip) || { count: 0, firstAttempt: now };
   
   // Reset if window expired

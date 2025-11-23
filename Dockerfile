@@ -1,47 +1,31 @@
 
-# Multi-stage build for optimized production image
-FROM node:22-alpine AS base
-
-# Install dependencies for native modules
-RUN apk add --no-cache python3 make g++ libc6-compat
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-FROM base AS dependencies
-
-# Install all dependencies (including dev dependencies)
-RUN npm ci --include=dev
-
-FROM base AS build
-
-# Copy node_modules from dependencies stage
-COPY --from=dependencies /app/node_modules ./node_modules
-
-# Copy source code
-COPY . .
-
-# Run linting and validation (optional - can be disabled for faster builds)
-RUN npm run lint || echo "Linting failed but continuing build"
-
 FROM node:22-alpine AS production
 WORKDIR /app
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
-# Copy application files first
-COPY --from=build --chown=nodejs:nodejs /app .
 
-# Ensure production-only dependencies
-RUN rm -rf node_modules \
-  && npm ci --omit=dev \
-  && npm cache clean --force
+# Copy application files
+COPY --chown=nodejs:nodejs . .
 
-# Create data directory for logs and cache
+# Install production dependencies
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Create data directory and set permissions
 RUN mkdir -p /app/data && chown nodejs:nodejs /app/data
+
+# Remove development files
+RUN rm -rf \
+    .git \
+    .github \
+    .gitignore \
+    .env.example \
+    .env.prod.example \
+    README.md \
+    TODO.md \
+    docs/ \
+    oldIndex.js
 
 # Switch to non-root user
 USER nodejs
@@ -53,9 +37,10 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
 # Environment variables
 ENV NODE_ENV=production \
     LOG_LEVEL=INFO \
-    REDIS_URL=redis://redis:6379
+    ENABLE_METRICS=true \
+    WEB_PANEL_PORT=3000
 
-# Expose port (for potential future web interface)
+# Expose port for web dashboard
 EXPOSE 3000
 
 # Start the application

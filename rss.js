@@ -1,11 +1,11 @@
-import redisClient from "./redisClient.js";
+import redisClient from './redisClient.js';
 import Parser from 'rss-parser';
 import { incrementRSSCount, logActivity } from './web-panel.js';
 
 const rssParser = new Parser({
   headers: { 
-    "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)",
-    "Accept": "application/rss+xml, application/xml, text/xml"
+    'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)',
+    'Accept': 'application/rss+xml, application/xml, text/xml'
   },
   timeout: 30000,
   maxRedirects: 5,
@@ -192,8 +192,8 @@ async function fetchContent(type, url) {
         `https://www.reddit.com/r/${subreddit}/new.json?limit=5`,
         {
           headers: {
-            "User-Agent": "StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)",
-            "Accept": "application/json"
+            'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)',
+            'Accept': 'application/json'
           },
           signal: controller.signal
         }
