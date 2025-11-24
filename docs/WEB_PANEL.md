@@ -1,11 +1,11 @@
 # Web Panel
 
-The Streamyfin Discord Bot includes a built-in web panel for monitoring and administration.
+The Streamyfin Discord Bot includes a built-in web panel for monitoring.
 
 ## Features
 
 ### 📊 **Dashboard Overview**
-- Bot status (online/offline)
+- Bot status (online/offline)  
 - Uptime tracking
 - Total commands executed
 - Error count monitoring
@@ -37,14 +37,12 @@ Add to your `.env` file:
 ```env
 ENABLE_WEB_PANEL=true
 WEB_PANEL_PORT=3000
-WEB_PANEL_PASSWORD=your_secure_password
 ```
 
 ### 2. Environment Variables
 
 - **`ENABLE_WEB_PANEL`**: Set to `true` to enable the web panel
 - **`WEB_PANEL_PORT`**: Port number (default: 3000)
-- **`WEB_PANEL_PASSWORD`**: Optional basic auth password for security
 
 ### 3. Access the Panel
 
@@ -52,19 +50,6 @@ Once the bot is running with the web panel enabled:
 
 1. Open your browser
 2. Navigate to `http://localhost:3000` (or your configured port)
-3. If you set a password, use username `admin` and your configured password
-
-## Security
-
-### Basic Authentication
-If `WEB_PANEL_PASSWORD` is set, the panel will be protected with HTTP Basic Authentication:
-- Username: `admin`
-- Password: Your configured password
-
-### Network Security
-- The web panel only binds to localhost by default
-- For production, consider using a reverse proxy (nginx, Apache)
-- Always use HTTPS in production environments
 
 ## API Endpoints
 
@@ -82,8 +67,7 @@ For production environments:
 
 1. **Use a reverse proxy** (nginx recommended)
 2. **Enable HTTPS** with SSL certificates
-3. **Set a strong password** for the web panel
-4. **Consider firewall rules** to restrict access
+3. **Consider firewall rules** to restrict access
 
 ### Example nginx configuration:
 
@@ -108,7 +92,7 @@ The web panel uses:
 - **Redis** for data storage
 - **Real-time updates** via periodic polling
 
-To customize the interface, modify the files in `web-static/`.
+To customize the interface, modify the files in `public/`.
 
 ## Troubleshooting
 
@@ -121,8 +105,3 @@ To customize the interface, modify the files in `web-static/`.
 - Ensure Redis is running and connected
 - Check bot logs for any connection errors
 - Verify the bot has been running long enough to collect data
-
-### Authentication issues
-- Double-check your password in the `.env` file
-- Use username `admin` (lowercase)
-- Clear browser cache if previously accessed without auth

@@ -5,22 +5,14 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "dashboard": "node index.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test": "node --test",
-    "test:watch": "node --test --watch",
     "validate": "node -e \"import('./utils/validation.js').then(m => m.logValidationResults(m.validateEnvironment()))\"",
     "health": "node health-check.js",
-    "production:check": "node -e \"import('./utils/production.js').then(m => console.log(JSON.stringify(m.validateProductionEnvironment(), null, 2)))\"",
-    "security:audit": "npm audit --audit-level=moderate",
-    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "docker:build": "./docker-manage.sh build",
-    "docker:start": "./docker-manage.sh start",
-    "docker:dev": "./docker-manage.sh dev",
-    "docker:stop": "./docker-manage.sh stop",
-    "docker:logs": "./docker-manage.sh logs",
-    "docker:status": "./docker-manage.sh status"
+    "deploy": "./production-deploy.sh deploy",
+    "deploy:status": "./production-deploy.sh status",
+    "deploy:logs": "./production-deploy.sh logs"
   },
   "keywords": [],
   "author": "",
@@ -38,19 +30,7 @@
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.8.1",
-    "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.39.1",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/commit-analyzer": "^13.0.1",
-    "@semantic-release/git": "^10.0.1",
-    "@semantic-release/github": "^11.0.3",
-    "@semantic-release/npm": "^12.0.1",
-    "@semantic-release/release-notes-generator": "^14.0.3",
-    "conventional-changelog-angular": "^8.0.0",
-    "conventional-changelog-cli": "^5.0.0",
-    "eslint": "^9.39.1",
-    "husky": "^9.1.7",
-    "semantic-release": "^24.2.5"
+    "eslint": "^9.39.1"
   }
 }

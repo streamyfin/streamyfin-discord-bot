@@ -1,7 +1,6 @@
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import crypto from 'crypto';
 import redisClient from './redisClient.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,13 +18,6 @@ const botStats = {
   lastActivity: Date.now()
 };
 
-// Security constants
-const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
-const MAX_LOGIN_ATTEMPTS = 5; // Max attempts per IP per hour
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
-const activeSessions = new Map();
-const loginAttempts = new Map(); // IP -> { count, firstAttempt }
-
 // Middleware
 app.use(express.json());
 
@@ -35,161 +27,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Serve dashboard HTML as static file
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Trust proxy for proper IP detection
-app.set('trust proxy', true);
-
-// IP detection middleware
-app.use((req, res, next) => {
-  req.realIP = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] || 'unknown';
-  next();
-});
-
-// Enhanced auth middleware with session management and rate limiting
-function basicAuth(req, res, next) {
-  if (!process.env.WEB_PANEL_PASSWORD) return next();
-  
-  const clientIP = req.realIP;
-  
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Basic ')) {
-    // Check rate limiting only when authentication is missing
-    if (isRateLimited(clientIP)) {
-      return res.status(429).json({ 
-        error: 'Too many failed login attempts. Please try again later.' 
-      });
-    }
-    
-    recordLoginAttempt(clientIP, false);
-    res.status(401).set('WWW-Authenticate', 'Basic realm="Bot Panel"').json({ 
-      error: 'Authentication required' 
-    });
-    return;
-  }
-  
-  try {
-    const credentials = Buffer.from(auth.slice(6), 'base64').toString();
-    const [username, password] = credentials.split(':');
-    
-    // Secure comparison to prevent timing attacks
-    const expectedUsername = 'admin';
-    const expectedPassword = process.env.WEB_PANEL_PASSWORD;
-    
-    const usernameValid = username && crypto.timingSafeEqual(
-      Buffer.from(username.padEnd(expectedUsername.length)),
-      Buffer.from(expectedUsername)
-    );
-    
-    const passwordValid = password && crypto.timingSafeEqual(
-      Buffer.from(password.padEnd(expectedPassword.length)),
-      Buffer.from(expectedPassword)
-    );
-    
-    if (usernameValid && passwordValid && username.length === expectedUsername.length) {
-      // Successful login - clear any failed attempts for this IP
-      recordLoginAttempt(clientIP, true);
-      
-      // Create/update session
-      const sessionId = crypto.randomUUID();
-      activeSessions.set(sessionId, {
-        username,
-        created: Date.now(),
-        lastAccess: Date.now(),
-        ip: clientIP
-      });
-      
-      // Clean expired sessions
-      cleanExpiredSessions();
-      
-      req.sessionId = sessionId;
-      next();
-    } else {
-      // Check rate limiting only on failed authentication attempts
-      if (isRateLimited(clientIP)) {
-        return res.status(429).json({ 
-          error: 'Too many failed login attempts. Please try again later.' 
-        });
-      }
-      
-      // Failed login
-      recordLoginAttempt(clientIP, false);
-      
-      // Add small delay to prevent brute force attacks
-      setTimeout(() => {
-        res.status(401).json({ error: 'Invalid credentials' });
-      }, 1000 + Math.random() * 1000);
-    }
-  } catch (error) {
-    // Check rate limiting only on authentication errors
-    if (isRateLimited(clientIP)) {
-      return res.status(429).json({ 
-        error: 'Too many failed login attempts. Please try again later.' 
-      });
-    }
-    
-    recordLoginAttempt(clientIP, false);
-    res.status(401).json({ error: 'Invalid authentication format' });
-  }
-}
-
-// Rate limiting functions
-function isRateLimited(ip) {
-  const now = Date.now();
-  const attempts = loginAttempts.get(ip);
-  
-  if (!attempts) return false;
-  
-  // Reset if window expired
-  if (now - attempts.firstAttempt > RATE_LIMIT_WINDOW) {
-    loginAttempts.delete(ip);
-    return false;
-  }
-  
-  return attempts.count >= MAX_LOGIN_ATTEMPTS;
-}
-
-function recordLoginAttempt(ip, success) {
-  const now = Date.now();
-  
-  if (success) {
-    // Clear failed attempts on successful login
-    loginAttempts.delete(ip);
-    return;
-  }
-  
-  // Only record failed authentication attempts
-  const attempts = loginAttempts.get(ip) || { count: 0, firstAttempt: now };
-  
-  // Reset if window expired
-  if (now - attempts.firstAttempt > RATE_LIMIT_WINDOW) {
-    attempts.count = 1;
-    attempts.firstAttempt = now;
-  } else {
-    attempts.count++;
-  }
-  
-  loginAttempts.set(ip, attempts);
-}
-
-// Clean expired sessions
-function cleanExpiredSessions() {
-  const now = Date.now();
-  for (const [sessionId, session] of activeSessions.entries()) {
-    if (now - session.lastAccess > SESSION_TIMEOUT) {
-      activeSessions.delete(sessionId);
-    }
-  }
-}
-
-app.use('/api', basicAuth);
-
-// Logout endpoint
-app.post('/api/logout', basicAuth, (req, res) => {
-  if (req.sessionId && activeSessions.has(req.sessionId)) {
-    activeSessions.delete(req.sessionId);
-  }
-  res.json({ message: 'Logged out successfully' });
 });
 
 // API Routes
@@ -313,8 +150,7 @@ app.get('/api/health', async (req, res) => {
       status: 'healthy',
       uptime,
       redis,
-      lastActivity: new Date(botStats.lastActivity).toISOString(),
-      activeSessions: activeSessions.size
+      lastActivity: new Date(botStats.lastActivity).toISOString()
     });
   } catch (error) {
     console.error('[WEB] Health API error:', error);

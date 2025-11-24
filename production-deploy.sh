@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 PROJECT_DIR="$SCRIPT_DIR"
 ENV_FILE="${PROJECT_DIR}/.env"
-COMPOSE_FILE="${PROJECT_DIR}/docker-compose.prod.yml"
+COMPOSE_FILE="${PROJECT_DIR}/docker-compose.yml"
 
 # Colors for output
 RED='\033[0;31m'
