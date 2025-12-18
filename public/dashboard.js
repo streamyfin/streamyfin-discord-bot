@@ -22,7 +22,7 @@ async function loadStats() {
       <div class="stat"><span>RSS Feeds:</span><span class="stat-value">${data.rssFeeds}</span></div>
       <div class="stat"><span>Last Activity:</span><span class="stat-value">${formatDate(data.lastActivity)}</span></div>
     `;
-  } catch (error) {
+  } catch {
     document.getElementById('stats-content').innerHTML = '<div style="color: red;">Failed to load stats</div>';
   }
 }
@@ -37,7 +37,7 @@ async function loadCommands() {
     ).join('');
     
     document.getElementById('commands-content').innerHTML = content || '<div>No commands executed yet</div>';
-  } catch (error) {
+  } catch {
     document.getElementById('commands-content').innerHTML = '<div style="color: red;">Failed to load commands</div>';
   }
 }
@@ -55,7 +55,7 @@ async function loadRSS() {
     ).join('');
     
     document.getElementById('rss-content').innerHTML = content || '<div>No RSS feeds configured</div>';
-  } catch (error) {
+  } catch {
     document.getElementById('rss-content').innerHTML = '<div style="color: red;">Failed to load RSS feeds</div>';
   }
 }
@@ -72,7 +72,7 @@ async function loadLogs() {
     ).join('');
     
     document.getElementById('logs-content').innerHTML = content || '<div>No logs available</div>';
-  } catch (error) {
+  } catch {
     document.getElementById('logs-content').innerHTML = '<div style="color: red;">Failed to load logs</div>';
   }
 }

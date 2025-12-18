@@ -106,7 +106,7 @@ class ProductionMonitor {
     // Test Redis connectivity
     try {
       await redisClient.ping();
-    } catch (error) {
+    } catch {
       health.status = 'critical';
       health.errors = health.errors || [];
       health.errors.push('Redis connection failed');

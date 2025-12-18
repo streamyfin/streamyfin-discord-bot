@@ -5,8 +5,6 @@
  * This script verifies that the bot is running correctly
  */
 
-import { promises as fs } from 'fs';
-
 const HEALTH_CHECK_TIMEOUT = 5000; // 5 seconds
 
 async function checkHealth() {

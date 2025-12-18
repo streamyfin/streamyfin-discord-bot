@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import redisClient from '../../redisClient.js';
 
 const serverRoles = ['Developer', 'Administrator'];

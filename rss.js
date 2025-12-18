@@ -187,28 +187,33 @@ async function fetchContent(type, url) {
         .replace(/\/$/, '');
       
       const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 10_000);
-      const response = await fetch(
-        `https://www.reddit.com/r/${subreddit}/new.json?limit=5`,
-        {
-          headers: {
-            'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)',
-            'Accept': 'application/json'
-          },
-          signal: controller.signal
+      const timeoutId = setTimeout(() => controller.abort(), 10_000);
+      
+      try {
+        const response = await fetch(
+          `https://www.reddit.com/r/${subreddit}/new.json?limit=5`,
+          {
+            headers: {
+              'User-Agent': 'StreamyfinBot/1.0 (+https://github.com/streamyfin/streamyfin-discord-bot)',
+              'Accept': 'application/json'
+            },
+            signal: controller.signal
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Reddit API returned ${response.status}`);
         }
-      ).finally(() => clearTimeout(t));
-      
-      if (!response.ok) {
-        throw new Error(`Reddit API returned ${response.status}`);
+        
+        const data = await response.json();
+        return data.data.children.map(post => ({
+          title: post.data.title,
+          link: `https://reddit.com${post.data.permalink}`,
+          id: post.data.id
+        }));
+      } finally {
+        clearTimeout(timeoutId);
       }
-      
-      const data = await response.json();
-      return data.data.children.map(post => ({
-        title: post.data.title,
-        link: `https://reddit.com${post.data.permalink}`,
-        id: post.data.id
-      }));
     }
     
     console.warn(`[RSS] Unknown content type: ${type}`);
