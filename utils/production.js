@@ -143,10 +143,9 @@ export function validateProductionEnvironment() {
   urlEnvs.forEach(envVar => {
     if (process.env[envVar]) {
       try {
-         
         new globalThis.URL(process.env[envVar]);
-      } catch (_error) {
-        errors.push(`${envVar} is not a valid URL`);
+      } catch (error) {
+        errors.push(`${envVar} is not a valid URL: ${error.message}`);
       }
     }
   });

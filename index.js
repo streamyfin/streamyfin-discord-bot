@@ -10,7 +10,7 @@ import redisClient from './redisClient.js';
 import startRSS from './rss.js';
 import { validateEnvironment, setEnvironmentDefaults, logValidationResults } from './utils/validation.js';
 import { startWebPanel, incrementCommandCount, incrementErrorCount, logActivity } from './web-panel.js';
-import { handleError, createErrorResponse } from './utils/errorHandler.js';
+import { createErrorResponse } from './utils/errorHandler.js';
 import monitor from './utils/monitor.js';
 import { applyProductionDefaults, validateProductionEnvironment } from './utils/production.js';
 import Logger from './utils/logger.js';
@@ -42,15 +42,15 @@ const tempCommands = [];
 
 /**
  * Parse and validate channels to ignore from environment
- * @returns {string[]|null} Array of channel IDs or null if none configured
+ * @returns {string[]|null} Array of channel IDs or null if none configured or on error
  */
 function parseChannelsToIgnore() {
   try {
     if (!process.env.CHANNELS_TO_IGNORE) return null;
     const channels = JSON.parse(process.env.CHANNELS_TO_IGNORE);
     return Array.isArray(channels) ? channels.map(String) : null;
-  } catch (_error) {
-    console.warn('Invalid CHANNELS_TO_IGNORE format, ignoring setting');
+  } catch (error) {
+    console.warn(`Invalid CHANNELS_TO_IGNORE format (${error.message}), ignoring setting`);
     return null;
   }
 }
@@ -159,7 +159,7 @@ client.on('interactionCreate', async (interaction) => {
           content: 'This channel is ignored by the bot.',
           flags: MessageFlags.Ephemeral,
         });
-      } catch (error) {
+      } catch {
         // Ignore reply errors for ignored channels
       }
     }
@@ -365,7 +365,6 @@ if (process.env.DISCORD_TOKEN) {
   
   // Still start web panel even without Discord
   if (process.env.ENABLE_WEB_PANEL === 'true') {
-    const { startWebPanel } = await import('./web-panel.js');
     startWebPanel();
   }
 }

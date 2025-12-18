@@ -61,7 +61,12 @@ export default {
       });
 
     } catch (error) {
-      console.error('[STATS] Error executing stats command:', error.message);
+      console.error('[STATS] Error executing stats command:', error);
+      console.error('[STATS] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        response: error.response?.data
+      });
             
       const errorResponse = {
         content: '❌ An error occurred while fetching statistics',

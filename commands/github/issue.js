@@ -43,7 +43,7 @@ export default {
         await interaction.reply(
           `🔗 **Issue #${issue.number}: ${issue.title}**\n${issue.html_url}`
         );
-      } catch (error) {
+      } catch {
         await interaction.reply(`❌ Issue not found for ${repoName} or an error occurred.`);
       }
       return;
