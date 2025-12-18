@@ -15,6 +15,11 @@ export default {
       try {
         const parts = interaction.customId.split('report_modal_');
         const messageId = parts[1];
+        
+        if (!messageId) {
+          throw new Error('Invalid interaction customId format');
+        }
+        
         const reportedMessage = await interaction.channel.messages.fetch(messageId);
         const reason = interaction.fields.getTextInputValue('report_reason');
 
