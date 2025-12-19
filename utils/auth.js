@@ -19,10 +19,10 @@ export class AuthManager {
       const hashedPassword = await redisClient.get('admin:password');
       if (!hashedPassword) {
         // Use environment password or generate secure default
-        const password = process.env.ADMIN_PASSWORD || this.generateSecurePassword();
+        const password = process.env.WEB_PANEL_PASSWORD || this.generateSecurePassword();
         await this.setAdminPassword(password);
         
-        if (!process.env.ADMIN_PASSWORD) {
+        if (!process.env.WEB_PANEL_PASSWORD) {
           logger.warn(`Generated admin password: ${password} - CHANGE IMMEDIATELY!`);
           console.log(`\n🔐 ADMIN PASSWORD: ${password}\n`);
         }
