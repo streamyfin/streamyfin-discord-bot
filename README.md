@@ -18,6 +18,14 @@
 
 The Streamyfin Discord Bot integrates project management, community engagement, and GitHub integration directly into the official Discord server. Key features include:
 
+### 📊 Web Panel
+Built-in monitoring dashboard at `http://localhost:3000` (when `ENABLE_WEB_PANEL=true`):
+- Bot statistics and uptime tracking
+- Command usage analytics  
+- RSS feed monitoring
+- Real-time activity logs
+- Admin controls for restart/log management
+
 - **Fetch the latest releases** from the GitHub repository
 - **Direct links** to the repository and project roadmap
 - **Create and close issues** and feature requests directly from Discord

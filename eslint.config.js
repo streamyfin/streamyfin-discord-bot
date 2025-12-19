@@ -20,7 +20,9 @@ export default [
         fetch: 'readonly',
         AbortController: 'readonly',
         document: 'readonly',
-        window: 'readonly'
+        window: 'readonly',
+        sessionStorage: 'readonly',
+        confirm: 'readonly'
       }
     },
     rules: {
