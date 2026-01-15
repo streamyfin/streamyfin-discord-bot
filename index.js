@@ -382,4 +382,3 @@ if (process.env.DISCORD_TOKEN) {
   process.exit(1);
 }
 
-// ignore me!
