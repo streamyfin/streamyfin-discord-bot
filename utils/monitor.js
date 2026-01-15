@@ -39,7 +39,7 @@ class ProductionMonitor {
   // Store in Redis for persistence
   async storeMetrics() {
     try {
-      await redisClient.hset('bot:metrics', {
+      await redisClient.hSet('bot:metrics', {
         startTime: this.metrics.startTime.toString(),
         commandsExecuted: this.metrics.commandsExecuted.toString(),
         errorsCount: this.metrics.errorsCount.toString(),
