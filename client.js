@@ -209,7 +209,7 @@ export default class Streamyfin extends Client {
       if (response.data?.attributeScores) {
         const toxicityScore = response.data.attributeScores.TOXICITY?.summaryScore?.value || 0;
         const flirtationScore = response.data.attributeScores.FLIRTATION?.summaryScore?.value || 0;
-        return toxicityScore >= 0.2 || flirtationScore >= 0.2;
+        return toxicityScore >= 0.7 || flirtationScore >= 0.7;
       }
       
       return false;

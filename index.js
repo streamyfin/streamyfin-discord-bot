@@ -9,7 +9,6 @@ import fs from 'fs';
 import redisClient from './redisClient.js';
 import startRSS from './rss.js';
 import { validateEnvironment, setEnvironmentDefaults, logValidationResults } from './utils/validation.js';
-import { startWebPanel, incrementCommandCount, incrementErrorCount, logActivity } from './web-panel.js';
 import { createErrorResponse } from './utils/errorHandler.js';
 import monitor from './utils/monitor.js';
 import { applyProductionDefaults, validateProductionEnvironment } from './utils/production.js';
@@ -112,7 +111,6 @@ async function loadCommands() {
 
 client.on('ready', async () => {
   console.log(`[BOT] ${client.user.tag} is ready!`);
-  logActivity('info', 'Bot started successfully', { tag: client.user.tag });
   client.user.setActivity('over Streamyfin\'s issues 👀', { type: 3 });
   
   // Store bot start time in Redis
@@ -126,7 +124,6 @@ client.on('ready', async () => {
   // Load commands and register them
   await loadCommands();
   console.log(`[COMMAND] Loaded ${tempCommands.length} commands`);
-  logActivity('info', `Loaded ${tempCommands.length} commands`);
   
   // Only register commands if we have them and proper environment
   if (tempCommands.length > 0 && process.env.DISCORD_TOKEN && process.env.CLIENT_ID) {
@@ -138,16 +135,11 @@ client.on('ready', async () => {
   // Start RSS monitoring if configured
   if (process.env.ENABLE_RSS_MONITORING === 'true') {
     logger.info('Starting RSS monitoring...');
-    logActivity('info', 'Starting RSS monitoring');
     startRSS(client).catch(error => {
       logger.error('RSS monitoring error:', error);
-      logActivity('error', 'RSS monitoring error', { error: error.message });
       monitor.recordError('rss_monitoring');
     });
   }
-  
-  // Start web panel if configured
-  startWebPanel();
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -198,21 +190,10 @@ async function handleCommandInteraction(interaction) {
 
   try {
     await command.run(interaction);
-    incrementCommandCount(interaction.commandName);
     monitor.recordCommand(interaction.commandName);
-    logActivity('info', `Command executed: ${interaction.commandName}`, { 
-      user: interaction.user.tag,
-      guild: interaction.guild?.name 
-    });
   } catch (error) {
     const errorResponse = createErrorResponse(error, `Command: ${interaction.commandName}`);
     monitor.recordError('command_execution');
-    incrementErrorCount();
-    
-    logActivity('error', `Command error: ${interaction.commandName}`, { 
-      error: error.message,
-      user: interaction.user.tag 
-    });
     
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp(errorResponse).catch(() => {});
@@ -286,10 +267,17 @@ async function handleModalSubmit(interaction) {
 client.on('messageCreate', async (message) => {
   if (!message.guild || message.author.bot) return;
   if (channelsToIgnore?.includes(message.channelId)) return;
-  
+
   // Handle AI support channel
   if (message.channelId === process.env.AI_SUPPORTCHANNEL_ID) {
     return client.handleSupport(message);
+  }
+
+  // Toxicity detection (log only)
+  if (process.env.PERSPECTIVE_APIKEY && message.content.length >= 10) {
+    checkToxicity(message).catch(error => {
+      console.error('[MODERATION] Error checking toxicity:', error.message);
+    });
   }
 
   // Handle unit conversions
@@ -300,6 +288,42 @@ client.on('messageCreate', async (message) => {
     });
   }
 });
+
+/**
+ * Check message for toxicity and log to mod channel if detected
+ * @param {Message} message - Discord message to check
+ */
+async function checkToxicity(message) {
+  const isToxic = await client.checkMessage(message.content);
+  if (!isToxic) return;
+
+  const modChannelId = process.env.MOD_LOG_CHANNEL_ID;
+  if (!modChannelId) {
+    console.warn('[MODERATION] Toxic message detected but MOD_LOG_CHANNEL_ID not set');
+    return;
+  }
+
+  try {
+    const modChannel = await client.channels.fetch(modChannelId);
+    if (!modChannel) return;
+
+    const embed = new EmbedBuilder()
+      .setTitle('Potentially Toxic Message Detected')
+      .setColor(0xff6b6b)
+      .addFields(
+        { name: 'User', value: `${message.author.tag} (${message.author.id})`, inline: true },
+        { name: 'Channel', value: `<#${message.channelId}>`, inline: true },
+        { name: 'Content', value: message.content.slice(0, 1024) || 'N/A' },
+        { name: 'Link', value: `[Jump to message](${message.url})` }
+      )
+      .setTimestamp();
+
+    await modChannel.send({ embeds: [embed] });
+    console.log(`[MODERATION] Logged toxic message from ${message.author.tag}`);
+  } catch (error) {
+    console.error('[MODERATION] Failed to log toxic message:', error.message);
+  }
+}
 
 /**
  * Register slash commands with Discord
@@ -319,17 +343,14 @@ const registerCommands = async () => {
       body: tempCommands,
     });
     console.log('[COMMAND] Slash commands registered successfully!');
-    logActivity('info', 'Slash commands registered successfully');
   } catch (error) {
     console.error('[COMMAND] Error registering slash commands:', error.message);
-    logActivity('error', 'Failed to register slash commands', { error: error.message });
   }
 };
 
 // Graceful shutdown handling
 process.on('SIGINT', async () => {
   logger.info('Received SIGINT, shutting down gracefully...');
-  logActivity('info', 'Bot shutdown initiated');
   try {
     monitor.destroy();
     await redisClient.quit();
@@ -342,29 +363,21 @@ process.on('SIGINT', async () => {
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', { promise, reason: reason?.message || reason });
-  logActivity('error', 'Unhandled rejection', { reason: reason?.message || reason });
   monitor.recordError('unhandled_rejection');
 });
 
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
-  logActivity('error', 'Uncaught exception', { error: error.message });
   monitor.recordError('uncaught_exception');
   process.exit(1);
 });
 
-// Start Discord bot if token is provided
+// Start Discord bot
 if (process.env.DISCORD_TOKEN) {
   client.login(process.env.DISCORD_TOKEN).catch(error => {
     console.error('[BOT] Failed to login:', error.message);
-    logActivity('error', 'Failed to login to Discord', { error: error.message });
   });
 } else {
-  console.warn('[BOT] No Discord token provided, starting in web panel only mode');
-  logActivity('warn', 'Starting without Discord connection - web panel only');
-  
-  // Still start web panel even without Discord
-  if (process.env.ENABLE_WEB_PANEL === 'true') {
-    startWebPanel();
-  }
+  console.error('[BOT] No Discord token provided');
+  process.exit(1);
 }
