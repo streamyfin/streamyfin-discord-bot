@@ -246,12 +246,16 @@ async function cleanupOldEntries() {
  * @param {string} pattern - Key pattern to match
  */
 async function* scanIterator(pattern) {
-  let cursor = 0;
-  do {
-    const result = await redisClient.scan(cursor, { MATCH: pattern, COUNT: 100 });
-    cursor = result.cursor;
-    yield result.keys;
-  } while (cursor !== 0);
+  const keys = [];
+  for await (const key of redisClient.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+    keys.push(key);
+    if (keys.length >= 100) {
+      yield keys.splice(0);
+    }
+  }
+  if (keys.length > 0) {
+    yield keys;
+  }
 }
 
 /**
