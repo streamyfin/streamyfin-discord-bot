@@ -32,4 +32,5 @@ logs/
 *.lock
 
 # Docker files
-docker-compose.yml.claude
+docker-compose.yml
+.claude

@@ -381,3 +381,5 @@ if (process.env.DISCORD_TOKEN) {
   console.error('[BOT] No Discord token provided');
   process.exit(1);
 }
+
+// ignore me!

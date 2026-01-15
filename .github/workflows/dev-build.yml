@@ -87,7 +87,6 @@ jobs:
           push: true
           tags: |
             retardgerman/streamyfin-discord-bot:dev
-            retardgerman/streamyfin-discord-bot:dev-${{ env.BRANCH_NAME }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -96,4 +95,3 @@ jobs:
         run: |
           echo "✅ Dev Docker images built and pushed:"
           echo "📦 retardgerman/streamyfin-discord-bot:dev"
-          echo "📦 retardgerman/streamyfin-discord-bot:dev-${{ env.BRANCH_NAME }}"
