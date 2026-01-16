@@ -106,7 +106,7 @@ async function processSingleFeed(client, key) {
   }
 
   // Only update timestamp after successful fetch with items
-  await redisClient.set(lastCheckKey, now);
+  await redisClient.set(lastCheckKey, String(now));
 
   const sentIdsKey = `${key}:sent`;
   await ensureSetKey(sentIdsKey);

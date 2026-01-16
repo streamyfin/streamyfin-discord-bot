@@ -84,11 +84,11 @@ export default {
         await redisClient.hSet(key, {
           type,
           url,
-          interval,
+          interval: String(interval),
           channelId,
           userId,
           guildId,
-          createdAt: Date.now()
+          createdAt: String(Date.now())
         });
 
         return interaction.reply(`✅ Now monitoring ${type.toUpperCase()} source: ${url} (every ${interval}m)`);
@@ -144,7 +144,7 @@ export default {
           await redisClient.hSet(key, 'channelId', newChannel);
         }
         if (newInterval) {
-          await redisClient.hSet(key, 'interval', newInterval);
+          await redisClient.hSet(key, 'interval', String(newInterval));
         }
         return interaction.reply(`Updated monitoring for ${url}. New channel: ${newChannel || 'unchanged'}, new interval: ${newInterval || 'unchanged'}m.`);
 
