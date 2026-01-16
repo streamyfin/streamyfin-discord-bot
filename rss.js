@@ -106,7 +106,9 @@ async function processSingleFeed(client, key) {
   }
 
   // Only update timestamp after successful fetch with items
+  console.log(`[RSS DEBUG] About to set lastCheck: key=${lastCheckKey}, value=${now}, type=${typeof now}`);
   await redisClient.set(lastCheckKey, String(now));
+  console.log(`[RSS DEBUG] lastCheck set successfully`);
 
   const sentIdsKey = `${key}:sent`;
   await ensureSetKey(sentIdsKey);
@@ -118,6 +120,7 @@ async function processSingleFeed(client, key) {
     const rawId = item.id || item.link || item.guid;
     if (!rawId) continue;
     const uniqueId = String(rawId);
+    console.log(`[RSS DEBUG] uniqueId: ${uniqueId}, rawId type: ${typeof rawId}, rawId: ${JSON.stringify(rawId)}`);
 
     const alreadySent = await redisClient.sIsMember(sentIdsKey, uniqueId);
     if (alreadySent) continue;
