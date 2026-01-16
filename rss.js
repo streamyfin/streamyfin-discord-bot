@@ -106,9 +106,7 @@ async function processSingleFeed(client, key) {
   }
 
   // Only update timestamp after successful fetch with items
-  console.log(`[RSS DEBUG] About to set lastCheck: key=${lastCheckKey}, value=${now}, type=${typeof now}`);
   await redisClient.set(lastCheckKey, String(now));
-  console.log(`[RSS DEBUG] lastCheck set successfully`);
 
   const sentIdsKey = `${key}:sent`;
   await ensureSetKey(sentIdsKey);
@@ -120,7 +118,6 @@ async function processSingleFeed(client, key) {
     const rawId = item.id || item.link || item.guid;
     if (!rawId) continue;
     const uniqueId = String(rawId);
-    console.log(`[RSS DEBUG] uniqueId: ${uniqueId}, rawId type: ${typeof rawId}, rawId: ${JSON.stringify(rawId)}`);
 
     const alreadySent = await redisClient.sIsMember(sentIdsKey, uniqueId);
     if (alreadySent) continue;
@@ -170,12 +167,17 @@ async function fetchContent(type, url) {
   try {
     if (type === 'rss') {
       const feed = await rssParser.parseURL(url);
-      return feed.items.slice(0, 10).map(item => ({
-        title: item.title,
-        link: item.link,
-        guid: item.guid || item.link,
-        id: item.id || item.guid || item.link
-      }));
+      return feed.items.slice(0, 10).map(item => {
+        // rss-parser returns guid as object when it has attributes (e.g., isPermaLink)
+        const guid = typeof item.guid === 'object' ? item.guid?._ : item.guid;
+        const id = item.id || guid || item.link;
+        return {
+          title: item.title,
+          link: item.link,
+          guid: guid || item.link,
+          id: id
+        };
+      });
     }
 
     if (type === 'reddit') {
