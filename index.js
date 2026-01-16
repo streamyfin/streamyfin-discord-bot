@@ -1,3 +1,4 @@
+// Deploy trigger
 import dotenv from 'dotenv';
 dotenv.config();
 
