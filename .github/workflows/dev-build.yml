@@ -1,0 +1,97 @@
+name: Dev Build & Deploy
+
+on:
+  push:
+    branches:
+      - codebase-rework
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: read
+
+jobs:
+  dev-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch full history to ensure we have all commits
+
+      - name: Check for relevant code changes
+        id: changes
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEVANT_CHANGES=true" >> "${GITHUB_ENV}"
+            echo "Manual trigger - building dev image"
+          else
+            git fetch origin codebase-rework || git fetch origin main
+            CHANGED=""
+            # Check if we can access the before commit
+            if [ -n "${{ github.event.before }}" ] && git cat-file -e "${{ github.event.before }}" 2>/dev/null; then
+              CHANGED=$(git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" || echo "")
+              echo "Using commit range: ${{ github.event.before }}..${{ github.sha }}"
+            else
+              # Fallback: check if HEAD~1 exists, then diff or show HEAD changes
+              if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+                CHANGED=$(git diff --name-only HEAD~1 HEAD || echo "")
+                echo "Using fallback: comparing HEAD~1..HEAD"
+              else
+                CHANGED=$(git show --name-only --format= HEAD || echo "")
+                echo "Using fallback: showing HEAD changes (no previous commit)"
+              fi
+            fi
+            echo "Changed files:"
+            printf '%s\n' "$CHANGED"
+            if [ -n "$CHANGED" ] && printf '%s' "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js|client\.js|package\.json|Dockerfile|\.github/workflows/)'; then
+              echo "RELEVANT_CHANGES=true" >> "${GITHUB_ENV}"
+              echo "✅ Relevant code changes detected"
+            else
+              echo "RELEVANT_CHANGES=false" >> "${GITHUB_ENV}"
+              echo "⚠️ No relevant code changes detected"
+            fi
+          fi
+
+      - name: Skip workflow if no relevant code changed
+        if: env.RELEVANT_CHANGES == 'false'
+        run: echo "⚠️ No relevant code changes – skipping dev build."
+
+      - name: Set up Docker Buildx
+        if: env.RELEVANT_CHANGES == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: env.RELEVANT_CHANGES == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract and sanitize branch name
+        if: env.RELEVANT_CHANGES == 'true'
+        shell: bash
+        run: |
+          BRANCH_RAW="${{ github.ref_name }}"
+          # Docker tag charset: [A-Za-z0-9_.-], lower-case recommended; no slashes
+          BRANCH_SLUG="$(echo "$BRANCH_RAW" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g' | sed -E 's/^-+|-+$//g' | cut -c1-120)"
+          if [ -z "$BRANCH_SLUG" ]; then BRANCH_SLUG="unknown"; fi
+          echo "BRANCH_SLUG=$BRANCH_SLUG" >> $GITHUB_ENV
+          echo "Building for branch: $BRANCH_RAW (tag slug: $BRANCH_SLUG)"
+
+      - name: Build and push Dev Docker image
+        if: env.RELEVANT_CHANGES == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            retardgerman/streamyfin-discord-bot:dev
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Docker image
+        if: env.RELEVANT_CHANGES == 'true'
+        run: |
+          echo "✅ Dev Docker images built and pushed:"
+          echo "📦 retardgerman/streamyfin-discord-bot:dev"

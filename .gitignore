@@ -33,3 +33,4 @@ logs/
 
 # Docker files
 docker-compose.yml
+.claude

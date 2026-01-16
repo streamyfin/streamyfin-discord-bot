@@ -13,7 +13,13 @@ export default {
     
     if (interaction.isModalSubmit && interaction.isModalSubmit()) {
       try {
-        const [_, messageId] = interaction.customId.split('report_modal_');
+        const parts = interaction.customId.split('report_modal_');
+        const messageId = parts[1];
+        
+        if (!messageId) {
+          throw new Error('Invalid interaction customId format');
+        }
+        
         const reportedMessage = await interaction.channel.messages.fetch(messageId);
         const reason = interaction.fields.getTextInputValue('report_reason');
 
@@ -43,7 +49,7 @@ export default {
         if (!logChannel) {
           return interaction.reply({
             content: 'Moderation log channel not found.',
-            MessageFlags: MessageFlags.Ephemeral,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -86,10 +92,10 @@ export default {
           flags: MessageFlags.Ephemeral ,
         });
       } catch (error) {
-        console.error('Error reporting message:', error);
+        console.error('[REPORT] Error reporting message:', error);
         await interaction.reply({
           content: '❌ An error occurred while reporting the message.',
-          MessageFlags: MessageFlags.Ephemeral,
+          flags: MessageFlags.Ephemeral,
         });
       }
       return;
