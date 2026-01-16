@@ -22,16 +22,6 @@ export const CONFIG = {
     GITHUB_API: 10000,
     PERSPECTIVE_API: 10000,
     AI_SUPPORT: 30000,
-    RSS_FETCH: 10000,
-  },
-
-  // RSS monitoring
-  RSS: {
-    CHECK_INTERVAL: 30000, // 30 seconds
-    MIN_FEED_INTERVAL: 60000, // 1 minute minimum
-    DEFAULT_FEED_INTERVAL: 300000, // 5 minutes default
-    CLEANUP_THRESHOLD: 1000,
-    ITEM_EXPIRY: 60 * 60 * 24 * 7, // 7 days
   },
 
   // Message filtering

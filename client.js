@@ -248,7 +248,7 @@ export default class Streamyfin extends Client {
     }, 10000);
 
     try {
-      const aiUrl = process.env.AI_SUPPORT_URL || process.env.AI_SUPPRT_URL;
+      const aiUrl = process.env.AI_SUPPORT_URL;
       if (!aiUrl || !process.env.AI_APIKEY) {
         throw new Error('AI support not configured');
       }
@@ -305,7 +305,7 @@ export default class Streamyfin extends Client {
         const feedbackType = reaction.emoji.name === '👍' ? 'positive' : 'negative';
 
         try {
-          const aiUrl = process.env.AI_SUPPORT_URL || process.env.AI_SUPPRT_URL;
+          const aiUrl = process.env.AI_SUPPORT_URL;
           await axios.post(
             `${aiUrl}/feedback`,
             {

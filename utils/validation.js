@@ -17,8 +17,7 @@ const REQUIRED_ENV_VARS = [
  */
 const OPTIONAL_ENV_VARS = {
   'REDIS_URL': 'redis://localhost:6379',
-  'GITHUB_API_BASE': 'https://api.github.com',
-  'ENABLE_RSS_MONITORING': 'false'
+  'GITHUB_API_BASE': 'https://api.github.com'
 };
 
 /**

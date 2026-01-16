@@ -1,4 +1,3 @@
-// Deploy trigger
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -8,7 +7,6 @@ import Streamyfin from './client.js';
 import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import redisClient from './redisClient.js';
-import startRSS from './rss.js';
 import { validateEnvironment, setEnvironmentDefaults, logValidationResults } from './utils/validation.js';
 import { createErrorResponse } from './utils/errorHandler.js';
 import monitor from './utils/monitor.js';
@@ -131,15 +129,6 @@ client.on('ready', async () => {
     await registerCommands();
   } else {
     logger.warn('Skipping command registration - missing token or client ID');
-  }
-  
-  // Start RSS monitoring if configured
-  if (process.env.ENABLE_RSS_MONITORING === 'true') {
-    logger.info('Starting RSS monitoring...');
-    startRSS(client).catch(error => {
-      logger.error('RSS monitoring error:', error);
-      monitor.recordError('rss_monitoring');
-    });
   }
 });
 

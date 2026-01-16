@@ -49,7 +49,7 @@ export default {
         if (!logChannel) {
           return interaction.reply({
             content: 'Moderation log channel not found.',
-            MessageFlags: MessageFlags.Ephemeral,
+            flags: MessageFlags.Ephemeral,
           });
         }
 
@@ -92,10 +92,10 @@ export default {
           flags: MessageFlags.Ephemeral ,
         });
       } catch (error) {
-        console.error('Error reporting message:', error);
+        console.error('[REPORT] Error reporting message:', error);
         await interaction.reply({
           content: '❌ An error occurred while reporting the message.',
-          MessageFlags: MessageFlags.Ephemeral,
+          flags: MessageFlags.Ephemeral,
         });
       }
       return;
