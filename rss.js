@@ -115,9 +115,10 @@ async function processSingleFeed(client, key) {
   for (const item of items) {
     if (isShuttingDown) break;
     
-    const uniqueId = item.id || item.link || item.guid;
-    if (!uniqueId) continue;
-    
+    const rawId = item.id || item.link || item.guid;
+    if (!rawId) continue;
+    const uniqueId = String(rawId);
+
     const alreadySent = await redisClient.sIsMember(sentIdsKey, uniqueId);
     if (alreadySent) continue;
 

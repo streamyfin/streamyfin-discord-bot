@@ -65,7 +65,7 @@ export default {
       const reminder = {
         text,
         userId,
-        reminderTime,
+        reminderTime: String(reminderTime),
         channelId: interaction.channelId
       };
 
