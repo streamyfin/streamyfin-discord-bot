@@ -1,231 +1,59 @@
 import { Client, Collection } from 'discord.js';
 import axios from 'axios';
 
+const GITHUB_API = 'https://api.github.com';
+
 export default class Streamyfin extends Client {
   constructor(...options) {
     super(...options);
-
     this.commands = new Collection();
-    this.userId = '398161771476549654';
-    this.repoOrg = process.env.REPO_ORG;
-    this.repoName = process.env.REPO_NAME;
+    this.repoOrg = process.env.REPO_ORG || 'streamyfin';
+    this.repoName = process.env.REPO_NAME || 'streamyfin';
     this.githubToken = process.env.GITHUB_TOKEN;
+  }
 
-  }
-  convertUnits(text) {
-    const unitConversionRegex = /(-?\d+(?:\.\d+)?)\s?(°?[FC]|celsius|fahrenheit|km|kilometers?|mi\b|miles?|kg|kilograms?|lbs?|pounds?|g|grams?|m\b|meters?|ft|feet|in|inches?)\b/gi;
-    let unitConversionMatch;
-    let result = []
-    while ((unitConversionMatch = unitConversionRegex.exec(text)) !== null) {
-      const unit = unitConversionMatch[2].toLowerCase();
-      const value = parseFloat(unitConversionMatch[1]);
-      let forumla;
-      switch (unit) {
-        case 'c':
-        case '°c':
-        case 'celsius':
-          forumla = `- ${value}°C ≈ ${((value * 9 / 5) + 32).toFixed(2)}°F`;
-          break;
-        case 'f':
-        case '°f':
-        case 'fahrenheit':
-          forumla = `- ${value}°F ≈ ${((value - 32) * 5 / 9).toFixed(2)}°C`;
-          break;
-        case 'km':
-        case 'kilometer':
-        case 'kilometers':
-          forumla = `- ${value} km ≈ ${(value * 0.621371).toFixed(2)} miles`;
-          break;
-        case 'mi':
-        case 'mile':
-        case 'miles':
-          forumla = `- ${value} miles ≈ ${(value * 1.609344).toFixed(3)} km`;
-          break;
-        case 'kg':
-        case 'kilogram':
-        case 'kilograms':
-          forumla = `- ${value} kg ≈ ${(value * 2.20462).toFixed(2)} lbs`;
-          break;
-        case 'lb':
-        case 'lbs':
-        case 'pound':
-        case 'pounds':
-          forumla = `- ${value} lbs ≈ ${(value * 0.453592).toFixed(2)} kg`;
-          break;
-        case 'g':
-        case 'gram':
-        case "grams":
-          forumla = `- ${value} g ≈ ${(value * 0.00220462).toFixed(4)} lbs`;
-          break;
-        case 'm':
-        case 'meter':
-        case 'meters':
-          forumla = `- ${value} m ≈ ${(value * 3.28084).toFixed(2)} ft`;
-          break;
-        case 'ft':
-        case 'feet':
-        case "feets":
-          forumla = `- ${value} ft ≈ ${(value * 0.3048).toFixed(2)} m`;
-          break;
-        case 'in':
-        case 'inch':
-        case 'inches':
-          forumla = `- ${value} in ≈ ${(value * 2.54).toFixed(2)} cm`;
-          break;
-      }
-      if (forumla) result.push(forumla);
-    }
-    return result?.length > 0 ? "Unit conversion:\n" + result.join("\n") : null;
-  }
   async fetchStats() {
-    const url = `https://api.github.com/repos/streamyfin/streamyfin/contributors?anon=1`;
-
+    const url = `${GITHUB_API}/repos/${this.repoOrg}/${this.repoName}/contributors?anon=1`;
     const response = await axios.get(url);
-    const contributors = await response.data;
-
-    return contributors.map((contributor) => ({
+    return response.data.map((contributor) => ({
       username: contributor.login || contributor.name,
       contributions: contributor.contributions,
     }));
-  };
+  }
 
   async fetchReleases() {
     try {
+      const headers = this.githubToken
+        ? { Authorization: `token ${this.githubToken}` }
+        : {};
+
       const response = await axios.get(
-        `${process.env.GITHUB_API_BASE}/repos/${this.repoOrg}/${this.repoName}/releases`,
-        {
-          headers: {
-            Authorization: `token ${this.githubToken}`,
-          },
-        }
+        `${GITHUB_API}/repos/${this.repoOrg}/${this.repoName}/releases`,
+        { headers }
       );
 
       const releases = response.data
-        .slice(0, 2) // Fetch the latest 2 releases
+        .slice(0, 2)
         .map((release) => ({ name: release.name, value: release.name }));
 
-      releases.push({ name: "Older", value: "Older" }); // Add "Older" as an option
-
+      releases.push({ name: 'Older', value: 'Older' });
       return releases;
     } catch (error) {
-      console.error("Error fetching releases:", error);
-      return [
-        { name: "unknown", value: "unknown" }, // Fallback data
-      ];
+      console.error('Error fetching releases:', error.message);
+      return [{ name: 'unknown', value: 'unknown' }];
     }
-  };
+  }
 
   async repoCheck(repoName) {
-    repoName = repoName.replace(/\s+/g, '-');
+    const normalizedName = repoName.replace(/\s+/g, '-');
     try {
-      const response = await axios.get(`https://api.github.com/repos/${this.repoOrg}/${repoName}`);
-      if (response.data && response.data?.id) {
-        return { exists: true, data: response.data };
-      } else {
-        return { exists: false };
-      }
+      const response = await axios.get(`${GITHUB_API}/repos/${this.repoOrg}/${normalizedName}`);
+      return response.data?.id
+        ? { exists: true, data: response.data }
+        : { exists: false };
     } catch (error) {
       console.error('Error checking repository:', error.message);
       return { exists: false, error: error.message };
-    }
-  }
-
-  async checkMessage(message) {
-    try {
-      const response = await axios.post(
-        `https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key=${process.env.PERSPECTIVE_APIKEY}`,
-        {
-          comment: { text: message },
-          requestedAttributes: { TOXICITY: {}, FLIRTATION: {} },
-        }
-      );
-
-      if (response.data && response.data.attributeScores) {
-        const toxicityScore = response.data.attributeScores.TOXICITY.summaryScore.value;
-        const flirtationScore = response.data.attributeScores.FLIRTATION.summaryScore.value;
-
-        return toxicityScore >= 0.2 || flirtationScore >= 0.2;
-      } else {
-        throw new Error('Invalid response from Perspective API');
-      }
-    } catch (error) {
-      console.error('Error analyzing message:', error);
-      return false;
-    }
-  }
-
-  async handleSupport(message) {
-    const userID = message.author.id;
-    const query = message.content.trim();
-    const ratelimit = this.userAIRateLimit;
-    const now = Date.now();
-    const messageComments = ["^", "//", "-"];
-    if (messageComments.some(i => query.startsWith(i))) return;
-    
-    if (ratelimit.has(userID) && now - ratelimit.get(userID) < 1000) return;
-    if (!query || query.length < 5) return await message.reply("Please provide a question or query for support.");
-    ratelimit.set(userID, now);
-
-    const typingInterval = setInterval(() => {
-      message.channel.sendTyping().catch(() => clearInterval(typingInterval));
-    }, 10000);
-
-    try {
-      await message.channel.sendTyping();
-
-      const request = await axios.post(
-        `${process.env.AI_SUPPRT_URL}/query`,
-        { user_id: userID, query },
-        {
-          headers: { 'X-API-Key': process.env.AI_APIKEY },
-        }
-      );
-
-      const response = request.data?.response;
-
-      if (response && response.length > 0) {
-        const sentMessage = await message.reply(response);
-
-        await sentMessage.react("👍");
-        await sentMessage.react("👎");
-
-        const filter = (reaction, user) => ["👍", "👎"].includes(reaction.emoji.name) && user.id === userID;
-
-        const collector = sentMessage.createReactionCollector({ filter, max: 1, time: 180_000 });
-
-        collector.on("collect", async (reaction) => {
-          const feedbackType = reaction.emoji.name === "👍" ? "positive" : "negative";
-
-          try {
-            await axios.post(
-              `${process.env.AI_SUPPRT_URL}/feedback`,
-              {
-                user_id: userID,
-                query,
-                answer: response,
-                feedback_type: feedbackType,
-              },
-              {
-                headers: { 'X-API-Key': process.env.AI_APIKEY },
-              }
-            );
-
-            if (feedbackType === "positive") {
-              await sentMessage.reply("Thanks for the feedback! I'm glad you found the answer helpful.");
-            } else {
-              await sentMessage.reply("Sorry for the dissatisfaction. I'll work on improving the answer.");
-            }
-          } catch (err) {
-            console.error("(AI Support) Feedback error:", err.message);
-          }
-        });
-      } else {
-        await message.reply("Sorry, I couldn't find an answer to your question.");
-      }
-    } catch (error) {
-      console.error("(AI Support) General error:", error.message);
-    } finally {
-      clearInterval(typingInterval);
     }
   }
 }
