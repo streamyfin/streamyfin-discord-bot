@@ -1,22 +1,51 @@
-# [Streamyfin](https://github.com/streamyfin/streamyfin)-Discord Bot
+<p align="center">
+  <img src="https://raw.githubusercontent.com/streamyfin/.github/main/streamyfin-github-banner.png" width="100%" alt="Streamyfin" />
+</p>
 
-A Discord bot to interact with the Streamyfin GitHub repository and streamline issue management, feature requests, and other project-related tasks directly from Discord.
+<h1 align="center">Streamyfin Discord Bot</h1>
+
+<p align="center">
+  Project workflow and community coordination bot for the Streamyfin ecosystem.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/github/stars/streamyfin/streamyfin-discord-bot?style=flat" />
+  <img src="https://img.shields.io/github/last-commit/streamyfin/streamyfin-discord-bot" />
+</p>
 
 ---
 
-## Features
+## Overview
 
-- **Fetch latest releases** from the GitHub repository
-- **Provide links** to the GitHub repository and roadmap
-- **Create and close issues** directly from Discord
-- **Submit feature requests** and start discussions in dedicated threads
-- **Show a list of all bot commands** with `/help`
-- **Share information** about joining the Testflight beta
-- **Allow users to donate** to support the project
-- **Display contributor statistics and leaderboard** for the Streamyfin project
-- **Remind me:** Set personal reminders with `/remindme`
-- **Support instructions:** Get tips on how to get support and report issues
-- **Piracy policy:** Clearly state rules on piracy-related discussions
-- **Feature status:** Commands like `/tv` and `/wyci` respond to specific feature questions or requests
-- **Automatic unit conversion** within Discord messages
-- **Multi-language detection** for messages
+This bot integrates Streamyfin development workflows directly into the official community server at https://discord.streamyfin.app.
+It assists with issue creation, feature discussions, contributor metrics, repository browsing, project notifications and user guidance.
+
+---
+
+## Commands
+
+| Command | Purpose |
+|--------|---------|
+| `/help` | Display available commands |
+| `/beta` | Information about joining the beta program |
+| `/donate` | Support the project financially |
+| `/logs` | Instructions for providing Jellyfin logs |
+| `/paste` | Link to paste.streamyfin.app for log sharing |
+| `/piracy` | Show piracy policy boundaries |
+| `/remindme` | Create a personal reminder |
+| `/support` | Guidance on how to request support effectively |
+| `/tv` | Status of Android TV and Apple TV clients |
+| `/wyci` | Response when a requested feature is not planned |
+| `Report Message` (context) | Report a message for moderator review |
+
+### GitHub related commands
+
+| Command | Purpose |
+|--------|---------|
+| `/createissue` | Create a GitHub issue via guided private thread |
+| `/closeissue` | Close and lock the related GitHub issue from discussion thread |
+| `/featurerequest` | Submit a feature request and create a discussion thread |
+| `/issue` | Retrieve or browse issues from GitHub |
+| `/repo` | Show repository information or list organization repos |
+| `/roadmap` | Show project roadmap |
+| `/stats` | Display contributor leaderboard and project metrics |
