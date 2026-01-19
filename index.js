@@ -73,10 +73,17 @@ async function handleCommand(interaction) {
     await command.run(interaction);
   } catch (error) {
     console.error(error);
-    await interaction.reply({
-      content: 'There was an error while executing this command!',
-      flags: MessageFlags.Ephemeral,
-    });
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({
+        content: 'There was an error while executing this command!',
+        flags: MessageFlags.Ephemeral,
+      }).catch(() => {});
+    } else {
+      await interaction.reply({
+        content: 'There was an error while executing this command!',
+        flags: MessageFlags.Ephemeral,
+      }).catch(() => {});
+    }
   }
 }
 
