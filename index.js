@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { GatewayIntentBits, REST, Routes, MessageFlags, EmbedBuilder } from 'discord.js';
 import Streamyfin from './client.js';
 import redisClient from './redisClient.js';
+import startRSS from './rss.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -139,6 +140,7 @@ client.on('ready', async () => {
   client.user.setActivity("over Streamyfin's issues 👀", { type: 3 });
   await Promise.all(commandImportPromises);
   await registerCommands();
+  startRSS(client);
 });
 
 client.on('interactionCreate', async (interaction) => {

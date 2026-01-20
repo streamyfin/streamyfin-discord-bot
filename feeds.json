@@ -1,0 +1,10 @@
+{
+  "sources": [
+    {
+      "type": "r/streamyfin",
+      "url": "https://www.reddit.com/r/streamyfin/new/.rss",
+      "channelId": "",
+      "color": "#FF5700"
+    }
+  ]
+}
