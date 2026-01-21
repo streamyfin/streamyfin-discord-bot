@@ -1,16 +1,28 @@
 import { SlashCommandBuilder } from 'discord.js';
 
-
 export default {
     data: new SlashCommandBuilder()
         .setName('beta')
         .setDescription('Join the Streamyfin Beta program.'),
     async run(interaction) {
         await interaction.reply({
-            content: `To access the Streamyfin beta, you need to subscribe to the Member tier (or higher) on [Patreon](https://www.patreon.com/streamyfin). **People who contribute to the project on an ongoing basis (code, etc.) receive free access to the beta. Contact <@398161771476549654> for that.**
+            content: `**Beta access requires a Member tier (or higher) subscription on [Patreon](https://www.patreon.com/c/streamyfin/membership)**
 
-**Make sure to connect your Discord account to your Patreon account** to automatically get access to the ⁠#🧪-beta-releases and typing permissions in #⁠💬-beta-chat channels on Discord. This is where we will post APKs and IPAs. This won't give automatic access to the TestFlight however, so you need to send <@398161771476549654> a DM with the email you use for Apple so that he can manually add you.`,
+Active, ongoing code contributors receive free beta access. Contact <@398161771476549654> if this applies to you.
+
+**Setup Required**
+Link your Patreon account to Discord.
+
+Once linked, you will recieve:
+* Typing permissions in https://discord.com/channels/1273259347689869413/1324488556567072920
+* Access to https://discord.com/channels/1273259347689869413/1275046992690675752
+
+Beta builds (APKs and IPAs) are posted there.
+
+**TestFlight for iOS and tvOS**
+Patreon access does not automatically grant TestFlight access.
+DM <@398161771476549654> with your Apple ID email to be added.`,
             allowedMentions: { users: [] }
-        })
+        });
     },
 };
