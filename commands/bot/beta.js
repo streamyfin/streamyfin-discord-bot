@@ -1,16 +1,24 @@
 import { SlashCommandBuilder } from 'discord.js';
 
-
 export default {
     data: new SlashCommandBuilder()
         .setName('beta')
-        .setDescription('Join the Streamyfin Beta program.'),
+        .setDescription('Join the Streamyfin beta program.'),
     async run(interaction) {
         await interaction.reply({
-            content: `To access the Streamyfin beta, you need to subscribe to the Member tier (or higher) on [Patreon](https://www.patreon.com/streamyfin). **People who contribute to the project on an ongoing basis (code, etc.) receive free access to the beta. Contact <@398161771476549654> for that.**
+            content: `**Streamyfin Beta Access**  
+Requires a Member tier (or higher) on [Patreon](https://www.patreon.com/c/streamyfin/membership) + linked Discord account
 
-**Make sure to connect your Discord account to your Patreon account** to automatically get access to the ⁠#🧪-beta-releases and typing permissions in #⁠💬-beta-chat channels on Discord. This is where we will post APKs and IPAs. This won't give automatic access to the TestFlight however, so you need to send <@398161771476549654> a DM with the email you use for Apple so that he can manually add you.`,
+Includes:
+- Typing access: https://discord.com/channels/1273259347689869413/1324488556567072920
+- Beta releases: https://discord.com/channels/1273259347689869413/1275046992690675752
+
+**TestFlight**  
+Message [Cagemaster on Patreon](https://www.patreon.com/messages/13366769-198048805?mode=user&tab=direct-messages) with your Apple ID to be added
+
+**Contributors**  
+Active Streamyfin contributors are eligible for free beta access.`,
             allowedMentions: { users: [] }
-        })
+        });
     },
 };
