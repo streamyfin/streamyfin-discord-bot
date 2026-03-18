@@ -18,6 +18,7 @@ logs/
 # IDE specific files
 .vscode/
 .idea/
+.claude/
 
 # Temporary files
 *.tmp
