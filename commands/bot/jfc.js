@@ -11,7 +11,7 @@ export default {
 Join the [JellyfinCommunity Discord](https://discord.gg/v7P9CAvCKZ) for support, discussions, and more!
 
 **Reddit**  
-Visit the [r/Jellyfin subreddit](https://www.reddit.com/r/JellyfinCommunity/) for news, tips, and community content.`,
+Visit the [r/JellyfinCommunity subreddit](https://www.reddit.com/r/JellyfinCommunity/) for news, tips, and community content.`,
             allowedMentions: { users: [] }
         });
     },
