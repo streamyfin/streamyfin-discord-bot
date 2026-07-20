@@ -34,6 +34,8 @@ function loadCommands() {
   const commandsPath = path.join(__dirname, 'commands');
 
   for (const dir of fs.readdirSync(commandsPath)) {
+    // _archive/tv.js should not be imported and read. if it does, we crash on the lack of default export
+    if (dir.startsWith('_')) continue; 
     const dirPath = path.join(commandsPath, dir);
     if (!fs.statSync(dirPath).isDirectory()) continue;
 
