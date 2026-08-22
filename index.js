@@ -165,3 +165,5 @@ client.on('interactionCreate', async (interaction) => {
 
 loadCommands();
 client.login(process.env.DISCORD_TOKEN);
+
+// trigger image build
