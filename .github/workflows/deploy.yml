@@ -30,7 +30,9 @@ jobs:
             CHANGED=$(git diff --name-only HEAD~1 HEAD)
           fi
           echo "$CHANGED"
-          if echo "$CHANGED" | grep -qE '^(commands/|src/|lib/|bot/|index\.js)'; then
+          # Everything counts as relevant except pure documentation and CI config
+          RELEVANT=$(echo "$CHANGED" | grep -vE '^(.*\.md|example\.docker-compose\.yml|\.github/)' || true)
+          if [ -n "$RELEVANT" ]; then
             echo "RELEVANT_CHANGES=true" >> $GITHUB_ENV
           else
             echo "RELEVANT_CHANGES=false" >> $GITHUB_ENV
