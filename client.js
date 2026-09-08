@@ -10,6 +10,7 @@ export default class Streamyfin extends Client {
     this.repoOrg = process.env.REPO_ORG || 'streamyfin';
     this.repoName = process.env.REPO_NAME || 'streamyfin';
     this.githubToken = process.env.GITHUB_TOKEN;
+    this.userId = process.env.OWNER_ID || '398161771476549654';
   }
 
   async fetchStats() {
