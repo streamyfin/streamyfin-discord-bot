@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -22,6 +23,11 @@ jobs:
       - name: Check for relevant code changes
         id: changes
         run: |
+          # A manual run always builds, no diff needed
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "RELEVANT_CHANGES=true" >> $GITHUB_ENV
+            exit 0
+          fi
           git fetch origin main
           if git rev-parse ${{ github.event.before }} 2>/dev/null; then
             CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
