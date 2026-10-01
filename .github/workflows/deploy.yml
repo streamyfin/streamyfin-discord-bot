@@ -73,7 +73,7 @@ jobs:
 
       - name: Build and push Docker images
         if: env.RELEVANT_CHANGES == 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
