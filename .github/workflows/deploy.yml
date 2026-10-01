@@ -50,7 +50,7 @@ jobs:
 
       - name: Set up Node.js
         if: env.RELEVANT_CHANGES == 'true'
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
