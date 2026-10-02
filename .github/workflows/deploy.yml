@@ -62,7 +62,7 @@ jobs:
 
       - name: Set up Docker Buildx
         if: env.RELEVANT_CHANGES == 'true'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to Docker Hub
         if: env.RELEVANT_CHANGES == 'true'
